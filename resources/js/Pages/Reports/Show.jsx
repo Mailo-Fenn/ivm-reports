@@ -1,0 +1,958 @@
+import axios from 'axios';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Link, router } from '@inertiajs/react';
+import {
+	ResponsiveContainer, AreaChart, Area, BarChart, Bar, LineChart, Line,
+	XAxis, YAxis, CartesianGrid, Tooltip, Cell,
+} from 'recharts';
+import {
+	Users, Eye, Radar, Heart, Target, MousePointerClick, FileText, Film,
+	TrendingUp, TrendingDown, Minus, ArrowRight, LayoutGrid, Pencil, Check, X,
+	FileDown, Trash2, Plus,
+} from 'lucide-react';
+import Layout from '../../Layout';
+
+const K = { wine: '#4C181C', accent: '#A5303B', mut: '#7C6B60' };
+
+const fInt = (n) => Math.round(Number(n) || 0).toLocaleString('ru-RU');
+const pct = (n) => Math.round(Number(n) || 0) + '%';
+const kAxis = (v) => (Math.abs(v) >= 1000 ? (v / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 0 }) + 'к' : String(v));
+const erOf = (o) => (o && o.subs ? +((o.inter / o.subs) * 100).toFixed(1) : 0);
+
+const METR = {
+	subs: { label: 'Подписчики', icon: Users, fmt: fInt },
+	views: { label: 'Просмотры', icon: Eye, fmt: fInt },
+	reach: { label: 'Охваты', icon: Radar, fmt: fInt },
+	inter: { label: 'Взаимодействия', icon: Heart, fmt: fInt },
+	er: { label: 'ER %', icon: Target, fmt: pct, pp: true },
+	leads: { label: 'Переходы на сайт', icon: MousePointerClick, fmt: fInt },
+	posts: { label: 'Посты', icon: FileText, fmt: fInt },
+	stories: { label: 'Сторис', icon: Film, fmt: fInt },
+};
+const KEYS = {
+	vk: ['subs', 'views', 'reach', 'inter', 'er', 'leads', 'posts', 'stories'],
+	ig: ['subs', 'views', 'reach', 'inter', 'er', 'posts', 'stories'],
+	max: ['subs', 'views', 'inter', 'er'],
+};
+
+const emptyStat = () => ({ subs: 0, views: 0, reach: 0, inter: 0, leads: 0, posts: 0, stories: 0 });
+
+const calcPlatformStatsFromWeeks = (weeks) => {
+	const result = {};
+
+	weeks.forEach(w => {
+		if (!result[w.platform]) {
+			result[w.platform] = emptyStat();
+		}
+
+		result[w.platform].subs += Number(w.subs) || 0;
+		result[w.platform].views += Number(w.views) || 0;
+		result[w.platform].reach += Number(w.reach) || 0;
+		result[w.platform].inter += Number(w.inter) || 0;
+		result[w.platform].leads += Number(w.leads) || 0;
+		result[w.platform].posts += Number(w.posts) || 0;
+		result[w.platform].stories += Number(w.stories) || 0;
+	});
+
+	return result;
+};
+
+function useCountUp(target) {
+	const [v, setV] = useState(target);
+	const ref = useRef(target);
+	useEffect(() => {
+		const from = ref.current, to = Number(target) || 0;
+		if (from === to) { setV(to); return; }
+		let raf; const s = performance.now();
+		const tick = (now) => {
+			const t = Math.min(1, (now - s) / 600);
+			const e = 1 - Math.pow(1 - t, 3);
+			setV(from + (to - from) * e);
+			if (t < 1) raf = requestAnimationFrame(tick); else ref.current = to;
+		};
+		raf = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(raf);
+	}, [target]);
+	return v;
+}
+function Delta({ diff, pp }) {
+	if (diff === null || diff === undefined) return <span className="chip-d flat"><Minus size={12} /> —</span>;
+	const up = diff > 0.001, down = diff < -0.001;
+	const Ico = up ? TrendingUp : down ? TrendingDown : Minus;
+	const txt = pp ? (diff > 0 ? '+' : '') + Math.round(diff) + ' п.п.' : (diff > 0 ? '+' : '') + fInt(diff);
+	return <span className={'chip-d ' + (up ? 'up' : down ? 'down' : 'flat')}><Ico size={12} /> {txt}</span>;
+}
+function KpiNum({ value, isPct }) {
+	const v = useCountUp(value);
+	return <div className="kpi-num">{isPct ? pct(v) : fInt(v)}</div>;
+}
+function Kpi({ mkey, value, prev }) {
+	const meta = METR[mkey];
+	const Ico = meta.icon;
+	const diff = prev === null || prev === undefined ? null : value - prev;
+	return (
+		<div className="kpi">
+			<div className="kpi-top"><span className="kpi-ico"><Ico size={15} /></span><Delta diff={diff} pp={meta.pp} /></div>
+			<KpiNum value={value} isPct={meta.pp} />
+			<div className="kpi-lbl">{meta.label}</div>
+		</div>
+	);
+}
+const AX = { fill: K.mut, fontSize: 11, fontFamily: 'Manrope' };
+function Tip({ active, payload, label, fmt = fInt }) {
+	if (!active || !payload?.length) return null;
+	return <div className="tip"><div className="tip-l">{label}</div><div className="tip-v">{fmt(payload[0].value)}</div></div>;
+}
+function Bars({ data, dataKey, highlight, fmt }) {
+	return (
+		<div className="chart">
+			<ResponsiveContainer width="100%" height="100%">
+				<BarChart data={data} margin={{ top: 14, right: 4, left: -12, bottom: 0 }}>
+					<CartesianGrid vertical={false} stroke="#D2CAB8" />
+					<XAxis dataKey="k" tick={AX} axisLine={false} tickLine={false} />
+					<YAxis tickFormatter={kAxis} tick={AX} axisLine={false} tickLine={false} width={38} />
+					<Tooltip content={<Tip fmt={fmt} />} cursor={{ fill: 'rgba(76,24,28,.06)' }} />
+					<Bar dataKey={dataKey} radius={[6, 6, 0, 0]} maxBarSize={40}>
+						{data.map((d, i) => <Cell key={i} fill={i === highlight ? K.accent : '#8A5157'} />)}
+					</Bar>
+				</BarChart>
+			</ResponsiveContainer>
+		</div>
+	);
+}
+function AreaOne({ data, dataKey }) {
+	return (
+		<div className="chart">
+			<ResponsiveContainer width="100%" height="100%">
+				<AreaChart data={data} margin={{ top: 14, right: 4, left: -12, bottom: 0 }}>
+					<defs><linearGradient id={'g' + dataKey} x1="0" y1="0" x2="0" y2="1">
+						<stop offset="0%" stopColor={K.wine} stopOpacity={0.28} /><stop offset="100%" stopColor={K.wine} stopOpacity={0} />
+					</linearGradient></defs>
+					<CartesianGrid vertical={false} stroke="#D2CAB8" />
+					<XAxis dataKey="k" tick={AX} axisLine={false} tickLine={false} />
+					<YAxis tickFormatter={kAxis} tick={AX} axisLine={false} tickLine={false} width={38} />
+					<Tooltip content={<Tip />} />
+					<Area type="monotone" dataKey={dataKey} stroke={K.wine} strokeWidth={2.5} fill={'url(#g' + dataKey + ')'} />
+				</AreaChart>
+			</ResponsiveContainer>
+		</div>
+	);
+}
+function LineErr({ data }) {
+	return (
+		<div className="chart">
+			<ResponsiveContainer width="100%" height="100%">
+				<LineChart data={data} margin={{ top: 14, right: 4, left: -12, bottom: 0 }}>
+					<CartesianGrid vertical={false} stroke="#D2CAB8" />
+					<XAxis dataKey="k" tick={AX} axisLine={false} tickLine={false} />
+					<YAxis tickFormatter={(v) => v + '%'} tick={AX} axisLine={false} tickLine={false} width={38} />
+					<Tooltip content={<Tip fmt={(v) => v + '%'} />} />
+					<Line type="monotone" dataKey="er" stroke={K.accent} strokeWidth={2.5} dot={{ r: 3, fill: K.accent, strokeWidth: 0 }} />
+				</LineChart>
+			</ResponsiveContainer>
+		</div>
+	);
+}
+function Panel({ eyebrow, title, note, children, light }) {
+	return (
+		<section className={'panel' + (light ? ' light' : '')}>
+			{(eyebrow || title) && (
+				<div className="panel-head">
+					<div>{eyebrow && <div className="eyebrow">{eyebrow}</div>}{title && <h2 className="panel-title">{title}</h2>}</div>
+					{note && <span className="note">{note}</span>}
+				</div>
+			)}
+			{children}
+		</section>
+	);
+}
+
+export default function Show({ project, report, reports, platformNames, current, previous, series, tasks, content, weeks }) {
+	const ALL_PLATFORMS = Object.keys(current);
+	const [view, setView] = useState('overview');
+	const [editing, setEditing] = useState(false);
+	const [saving, setSaving] = useState(false);
+
+	const initPf = () => Object.fromEntries(ALL_PLATFORMS.map((p) => [p, { ...emptyStat(), ...(current[p] || {}) }]));
+	const [pf, setPf] = useState(initPf);
+	const [tk, setTk] = useState(tasks || []);
+	const [ct, setCt] = useState(content || []);
+	const [summary, setSummary] = useState(report.summary || '');
+	const [plan, setPlan] = useState(report.plan_next || '');
+	const [community, setCommunity] = useState(report.community || '');
+	const [biz, setBiz] = useState(report.business || {});
+	const [wk, setWk] = useState(weeks || []);
+
+	useEffect(() => {
+
+	const calculated = calcPlatformStatsFromWeeks(wk);
+
+		setPf(prev => {
+			const updated = {...prev};
+
+			Object.keys(calculated).forEach(platform => {
+				updated[platform] = {
+					...updated[platform],
+					...calculated[platform],
+				};
+			});
+
+			return updated;
+		});
+
+	}, [wk]);
+
+	const PLIST = ALL_PLATFORMS.filter(
+		p => pf[p]?.is_enabled
+	);
+
+	const togglePlatform = (platform) => {
+		setPf(prev => ({
+			...prev,
+			[platform]: {
+				...prev[platform],
+				is_enabled: !prev[platform]?.is_enabled
+			}
+		}));
+	};
+
+	useEffect(() => {
+		setPf(initPf()); setTk(tasks || []); setCt(content || []);
+		setSummary(report.summary || ''); setPlan(report.plan_next || '');
+		setCommunity(report.community || ''); setBiz(report.business || {}); setWk(weeks || []);
+	}, [report.id]);
+
+	const num = (e) => (e.target.value === '' ? 0 : Number(e.target.value));
+	const stats = pf;
+
+	const total = (obj) => {
+		const sum = (k) => PLIST.reduce((a, p) => a + (Number(obj[p]?.[k]) || 0), 0);
+		return { subs: sum('subs'), views: sum('views'), reach: sum('reach'), inter: sum('inter'), leads: obj.vk?.leads || 0, erVk: erOf(obj.vk) };
+	};
+	const curTot = useMemo(
+		() => total(stats),
+		[stats, PLIST]
+	);
+	const prevTot = previous.stats ? total(previous.stats) : null;
+
+	const liveSeries = useMemo(() => {
+		const s = (series || []).map((r) => ({ ...r }));
+		if (s.length) {
+			const last = { ...s[s.length - 1] };
+			PLIST.forEach((p) => { last[p] = { ...(last[p] || {}), ...stats[p], er: erOf(stats[p]) }; });
+			s[s.length - 1] = last;
+		}
+		return s;
+	}, [series, stats]);
+	const hi = liveSeries.length - 1;
+
+	const save = () => {
+		setSaving(true);
+		router.put(`/reports/${report.id}`, {
+			tasks: tk,
+			content: ct,
+			business: biz,
+			summary,
+			plan_next: plan,
+			community,
+			weeks: wk,
+		}, {
+			preserveScroll: true,
+
+			onSuccess: () => {
+				console.log('SUCCESS');
+				setEditing(false);
+			},
+
+			onError: (errors) => {
+				console.log(errors);
+			},
+
+			onFinish: () => {
+				setSaving(false);
+			}
+		});
+	};
+	const cancel = () => {
+		setEditing(false); setPf(initPf()); setTk(tasks || []); setCt(content || []);
+		setSummary(report.summary || ''); setPlan(report.plan_next || '');
+		setCommunity(report.community || ''); setBiz(report.business || {}); setWk(weeks || []);
+	};
+	const removeReport = () => { if (confirm('Удалить отчёт?')) router.delete(`/reports/${report.id}`); };
+
+	return (
+		<Layout crumbs={[{ label: project.name, href: `/projects/${project.id}` }, { label: report.period_label }]}>
+			<div className="page-head">
+				<div>
+					<div className="eyebrow">Отчёт по SMM · {project.name}</div>
+					<h1 className="page-title">{view === 'overview' ? 'Обзор' : platformNames[view]} · {report.period_label}</h1>
+				</div>
+				<div className="page-actions">
+					{editing ? (
+						<>
+							<button className="btn btn-primary" onClick={save} disabled={saving}><Check size={16} /> {saving ? 'Сохранение…' : 'Сохранить'}</button>
+							<button className="btn" onClick={cancel}><X size={16} /> Отмена</button>
+						</>
+					) : (
+						<>
+							<button className="btn btn-primary" onClick={() => setEditing(true)}><Pencil size={16} /> Редактировать</button>
+							<a className="btn btn-accent" href={`/reports/${report.id}/pptx`}><FileDown size={16} /> Скачать PowerPoint</a>
+							<button className="btn btn-danger" onClick={removeReport}><Trash2 size={16} /></button>
+						</>
+					)}
+				</div>
+			</div>
+
+			<div className="tabs">
+				<button className={'tab' + (view === 'overview' ? ' on' : '')} onClick={() => setView('overview')}><LayoutGrid size={15} /> Обзор</button>
+				{PLIST.map((p) => <button key={p} className={'tab' + (view === p ? ' on' : '')} onClick={() => setView(p)}>{platformNames[p]}</button>)}
+
+				<div className="tab-note">Динамика — к предыдущему месяцу{previous.label ? ` (${previous.label})` : ''}</div>
+			</div>
+
+			<div className="tabs-months">
+				{reports.map((m) => {
+					const active = m.id === report.id;
+
+					return active ? (
+						<span
+							key={m.id}
+							className="tab current"
+						>
+							{m.period_label}
+						</span>
+					) : (
+						<Link
+							key={m.id}
+							href={`/reports/${m.id}`}
+							className="tab"
+						>
+							{m.period_label}
+						</Link>
+					);
+				})}
+			</div>
+
+			{view === 'overview'
+				? <Overview {...{ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks: tk, biz, summary, plan, community, setView, PLIST }} />
+				: <PlatformView pid={view} {...{ platformNames, stats, previous, liveSeries, content: ct, PLIST }} />}
+
+			{editing && <Editor {...{ platformNames, PLIST, togglePlatform, current, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, num }} />}
+
+			<footer className="foot"><span>Истина в маркетинге · istinavm.ru</span><span>{project.name} · {report.period_label}</span></footer>
+		</Layout>
+	);
+}
+
+function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks, biz, summary, plan, community, setView, PLIST }) {
+	const kpis = [
+		{ key: 'subs', label: 'База подписчиков', val: curTot.subs, prev: prevTot?.subs, icon: Users },
+		{ key: 'views', label: 'Просмотры · все площадки', val: curTot.views, prev: prevTot?.views, icon: Eye },
+		{ key: 'reach', label: 'Охват · все площадки', val: curTot.reach, prev: prevTot?.reach, icon: Radar },
+		{ key: 'inter', label: 'Взаимодействия', val: curTot.inter, prev: prevTot?.inter, icon: Heart },
+		{ key: 'er', label: 'ER ВКонтакте', val: curTot.erVk, prev: prevTot?.erVk, icon: Target, pp: true, pct: true },
+		{ key: 'leads', label: 'Переходы на сайт (ВК)', val: curTot.leads, prev: prevTot?.leads, icon: MousePointerClick },
+	];
+
+	console.log(curTot)
+
+	const chartData = liveSeries.map((r) => ({ k: r.k, views: PLIST.reduce((a, p) => a + (r[p]?.views || 0), 0) }));
+	return (
+		<>
+			<div className="kpi-grid">
+				{kpis.map((k) => {
+					const diff = k.prev === null || k.prev === undefined ? null : k.val - k.prev;
+					const Ico = k.icon;
+
+					if (k.val == 0) {
+						return;
+					} else {
+						return (
+							<div className="kpi" key={k.key}>
+								<div className="kpi-top"><span className="kpi-ico"><Ico size={15} /></span><Delta diff={diff} pp={k.pp} /></div>
+								<KpiNum value={k.val} isPct={k.pct} /><div className="kpi-lbl">{k.label}</div>
+							</div>
+						);
+					}
+				})}
+			</div>
+
+			<Panel eyebrow="Динамика" title="Просмотры по всем площадкам">
+				<Bars data={chartData} dataKey="views" highlight={hi} fmt={fInt} />
+			</Panel>
+
+			<Panel eyebrow="Каналы" title="Показатели по площадкам">
+				<div className="plat-grid">
+					{PLIST.map((p) => {
+						const d = { ...stats[p], er: erOf(stats[p]) };
+						return (
+							<button key={p} className="plat-card" onClick={() => setView(p)}>
+								<div className="plat-name">{platformNames[p]} <ArrowRight size={15} /></div>
+								<div className="plat-big">{fInt(d.subs)} <span>подписчиков</span></div>
+								<div className="plat-rows">
+									<div><span>Просмотры</span><b>{fInt(d.views)}</b></div>
+									<div><span>Взаимодействия</span><b>{fInt(d.inter)}</b></div>
+									<div><span>ER</span><b>{pct(d.er)}</b></div>
+								</div>
+							</button>
+						);
+					})}
+				</div>
+			</Panel>
+
+			<div className="two">
+				<Panel eyebrow="Работа" title="Задачи: план / факт" light>
+					<div className="tasks">
+						<div className="task-row task-h"><span>Задача</span><span>План</span><span>Факт</span><span>Статус</span></div>
+						{(tasks || [])
+							.filter(t => t.type !== 'check')
+							.map((t, i) => (
+								<div className="task-row" key={i}>
+									<span className="task-l">{t.title}</span>
+									<span className="task-c">{t.plan || '—'}</span>
+									<span className="task-c task-b">{t.fact || '—'}</span>
+									{t.plan <= t.fact ? (<span className="task-s">✓ Выполнено</span>) : (<span className="task-s warn">✕ Не выполнено</span>)}
+								</div>
+							))}
+					</div>
+				</Panel>
+				<Panel eyebrow="Работа" title="Чек-лист" light>
+					<div className="tasks">
+						{(tasks || [])
+							.filter(t => t.type === 'check')
+							.map((t, i) => (
+								<div className="task-row check-list-task-row" key={i}>
+									<span className="task-l">
+										{t.title}
+									</span>
+									{t.status === 'выполнено' ? (<span className="task-s">✓ Выполнено</span>) : (<span className="task-s warn">✕ Не выполнено</span>)}
+								</div>
+							))}
+					</div>
+				</Panel>
+				<Panel eyebrow="Бизнес" title="Результаты" light>
+					<div className="biz-grid">
+						<div className="biz"><div className="biz-v">{fInt(stats.vk?.leads || 0)}</div><div className="biz-l">переходов на сайт из ВК</div></div>
+						<div className="biz"><div className="biz-v">{biz.ad_clicks ? fInt(biz.ad_clicks) : '—'}</div><div className="biz-l">переходов с рекламы</div></div>
+						<div className="biz"><div className="biz-v">{biz.ad_price ? biz.ad_price + ' ₽' : '—'}</div><div className="biz-l">цена перехода</div></div>
+						<div className="biz"><div className="biz-v">{biz.ad_budget ? fInt(biz.ad_budget) + ' ₽' : '—'}</div><div className="biz-l">бюджет размещения</div></div>
+					</div>
+				</Panel>
+			</div>
+
+			<div className="two">
+				<Panel eyebrow="Итоги" title="Выводы месяца" light>
+					{summary ? summary.split('\n').map((l, i) => <p className="plain" key={i} style={{ marginTop: i ? 8 : 0 }}>{l}</p>) : <p className="plain" style={{ color: 'var(--mut)' }}>Не заполнено.</p>}
+				</Panel>
+				<Panel eyebrow="Дальше" title="План на следующий месяц">
+					{plan ? <ul className="plan">{plan.split('\n').filter(Boolean).map((l, i) => <li key={i}>{l}</li>)}</ul> : <p className="plain" style={{ color: 'var(--creamMut)' }}>Не заполнено.</p>}
+				</Panel>
+			</div>
+
+			{community && (
+				<Panel eyebrow="Сообщество" title="Работа с сообществом">
+					<p className="plain">{community}</p>
+				</Panel>
+			)}
+		</>
+	);
+}
+
+function PlatformView({ pid, platformNames, stats, previous, liveSeries, content, PLIST }) {
+	const cur = { ...stats[pid], er: erOf(stats[pid]) };
+	const prevRaw = previous.stats ? previous.stats[pid] : null;
+	const prev = prevRaw ? { ...prevRaw, er: erOf(prevRaw) } : null;
+	const keys = KEYS[pid];
+	const chartS = liveSeries.map((r) => ({ k: r.k, ...(r[pid] || {}) }));
+	const items = (content || []).filter((c) => c.platform === pid);
+
+	return (
+		<>
+			<div className="kpi-grid">
+				{keys.map((k) => <Kpi key={k} mkey={k} value={cur[k]} prev={prev ? prev[k] : null} />)}
+			</div>
+
+			<div className="two">
+				<Panel eyebrow="Аудитория" title="Подписчики по месяцам" light><AreaOne data={chartS} dataKey="subs" /></Panel>
+				<Panel eyebrow="Охват" title="Просмотры по месяцам" light><Bars data={chartS} dataKey="views" highlight={chartS.length - 1} fmt={fInt} /></Panel>
+			</div>
+			<div className="two">
+				<Panel eyebrow="Активность" title="Взаимодействия по месяцам" light><Bars data={chartS} dataKey="inter" highlight={chartS.length - 1} fmt={fInt} /></Panel>
+				<Panel eyebrow="Вовлечённость" title="ER % по месяцам" light><LineErr data={chartS} /></Panel>
+			</div>
+
+			<Panel eyebrow="Сравнение" title={`${platformNames[pid]}: месяц к месяцу`} light>
+				<div className="mom">
+					<div className="mom-row mom-h"><span>Показатель</span><span>{previous.label || '—'}</span><span>тек.</span><span>Δ</span></div>
+					{keys.map((k) => {
+						const meta = METR[k];
+						const diff = prev ? cur[k] - prev[k] : null;
+						const up = diff !== null && diff > 0.001, down = diff !== null && diff < -0.001;
+						return (
+							<div className="mom-row" key={k}>
+								<span className="mom-lbl">{meta.label}</span>
+								<span className="mom-mut">{prev ? meta.fmt(prev[k]) : '—'}</span>
+								<span className="mom-cur">{meta.fmt(cur[k])}</span>
+								<span className={'mom-d ' + (up ? 'u' : down ? 'd' : 'f')}>
+									{diff === null ? '—' : meta.pp ? (diff > 0 ? '+' : '') + Math.round(diff) + ' п.п.' : (diff > 0 ? '+' : '') + fInt(diff)}
+								</span>
+							</div>
+						);
+					})}
+				</div>
+			</Panel>
+
+			{items.length > 0 && (
+				<Panel eyebrow="Контент" title={`Топ-контент · ${platformNames[pid]}`}>
+					{pid === 'ig' ? (
+						<div className="reels">
+							{items.map((c, i) => <div className="reel" key={i}>
+								{c.image && (
+									<img
+										src={`/storage/${c.image}`}
+										alt={c.title}
+										className="content-image"
+									/>
+								)}
+
+								<b>{fInt(c.views)}</b><span>просмотры</span><em>{c.title}</em></div>)}
+						</div>
+					) : (
+						<div className="two">
+							{items.map((c, i) => (
+								<div className="post" key={i}>
+									<div>
+										<div className="post-title">{c.title}</div>
+										{c.image && (
+											<img
+												src={`/storage/${c.image}`}
+												alt={c.title}
+												className="content-image"
+											/>
+										)}
+									</div>
+									<div>
+										<div className="post-metrics">
+											<div><b>{fInt(c.views)}</b><span>Просмотры</span></div>
+											<div><b>{fInt(c.reactions)}</b><span>Реакции</span></div>
+											<div><b>{fInt(c.comments)}</b><span>Комм.</span></div>
+											<div><b>{fInt(c.reposts)}</b><span>Репосты</span></div>
+										</div>
+										{c.insight && <div className="post-ins"><b>Вывод:</b> {c.insight}</div>}
+									</div>
+								</div>
+							))}
+						</div>
+					)}
+				</Panel>
+			)}
+		</>
+	);
+}
+
+function Editor({ platformNames, PLIST, togglePlatform, current, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, num }) {
+	const setStat = (p, k, v) => setPf((s) => ({ ...s, [p]: { ...s[p], [k]: v } }));
+	const statKeys = ['subs', 'views', 'reach', 'inter', 'leads', 'posts', 'stories'];
+	const planTasks = tk.filter(t => t.type !== 'check');
+	const checkTasks = tk.filter(t => t.type === 'check');
+
+	const uploadImage = async (index, file) => {
+		if (!file) return;
+
+		const formData = new FormData();
+		formData.append('image', file);
+
+		try {
+			const { data } = await axios.post('/upload', formData, {
+				headers: {
+					'Content-Type': 'multipart/form-data',
+				},
+			});
+
+			setCt(ct =>
+				ct.map((item, i) =>
+					i === index
+						? {
+							...item,
+							image: data.path,
+						}
+						: item
+				)
+			);
+		} catch (e) {
+			alert('Ошибка загрузки изображения');
+			console.error(e);
+		}
+	};
+
+	const weekStats = {};
+
+	PLIST.forEach(platform => {
+		weekStats[platform] = wk.filter(w => w.platform === platform);
+	});
+
+	console.log('weeks', wk);
+
+	return (
+		<Panel eyebrow="Редактирование" title="Данные отчёта">
+			<div className="platform-edit">
+				{Object.entries(current).map(([key, item]) => (
+					<label 
+						key={key}
+						className={'platform-check ' + (pf[key]?.is_enabled ? 'active' : '')}
+					>
+						<input
+							type="checkbox"
+							checked={pf[key]?.is_enabled || false}
+							onChange={() => togglePlatform(key)}
+						/>
+
+						<span className="platform-box">
+							<span className="platform-dot"></span>
+							{platformNames[key]}
+						</span>
+					</label>
+				))}
+			</div>
+
+			<div className='platrorm-stat-wrapper'>
+				{PLIST.map(platform => (
+					<details
+						key={platform}
+						style={{ marginTop: 18 }}
+					>
+						<summary
+							className="edit-label"
+							style={{ cursor: 'pointer' }}
+						>
+							Понедельная статистика · {platformNames[platform]}
+						</summary>
+
+
+						<div
+							className="wtable"
+							style={{ marginTop: 20 }}
+						>
+
+							<table>
+
+								<thead>
+									<tr>
+										<th>Неделя</th>
+										<th>Подписчики</th>
+										<th>Просмотры</th>
+										<th>Охваты</th>
+										<th>Взаим.</th>
+										<th>Заявки</th>
+										<th>Посты</th>
+										<th>Сторис</th>
+									</tr>
+								</thead>
+
+
+								<tbody>
+
+									{weekStats[platform].map((w) => (
+
+										<tr key={w.id}>
+
+											<td>
+												<input
+													className="ei ei-text"
+													value={w.label}
+													onChange={(e) =>
+														setWk(
+															wk.map(item =>
+																item.id === w.id
+																	? {
+																		...item,
+																		label: e.target.value
+																	}
+																	: item
+															)
+														)
+													}
+												/>
+											</td>
+
+
+											{[
+												'subs',
+												'views',
+												'reach',
+												'inter',
+												'leads',
+												'posts',
+												'stories'
+											].map(key => (
+
+												<td key={key}>
+
+													<input
+														className="ei"
+														type="number"
+														value={w[key] ?? 0}
+														onChange={(e) =>
+															setWk(
+																wk.map(item =>
+																	item.id === w.id
+																		? {
+																			...item,
+																			[key]: num(e)
+																		}
+																		: item
+																)
+															)
+														}
+													/>
+
+												</td>
+
+											))}
+
+										</tr>
+
+									))}
+
+								</tbody>
+
+							</table>
+
+						</div>
+
+					</details>
+				))}
+			</div>
+
+			<div className="edit-label">
+				Показатели по площадкам (рассчитано по неделям)
+			</div>
+
+			<div className="wtable" style={{ marginBottom: 18 }}>
+				<table>
+					<thead>
+						<tr>
+							<th>Площадка</th>
+							{statKeys.map((k) => (
+								<th key={k}>{METR[k].label}</th>
+							))}
+						</tr>
+					</thead>
+
+					<tbody>
+						{PLIST.map((p) => (
+							<tr key={p}>
+								<td style={{ fontWeight: 700 }}>
+									{platformNames[p]}
+								</td>
+
+								{statKeys.map((k) => (
+									<td key={k}>
+										{pf[p]?.[k] ?? 0}
+									</td>
+								))}
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+
+			<div className="two">
+				<div>
+					<div className="edit-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+						<span>Задачи (план / факт)</span>
+						<button className="btn btn-mini" onClick={() => setTk([...tk, { title: '', plan: '', fact: '', status: 'выполнено', type: 'plan_fact' }])}><Plus size={13} /></button>
+					</div>
+					<div className="edit-grid" style={{ marginTop: 8 }}>
+						{planTasks.map((t) => {
+							const i = tk.findIndex(x => x === t);
+
+							return (
+								<div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr .7fr .7fr 1.2fr auto', gap: 6 }}>
+									<input className="ei ei-text" value={t.title} placeholder="Задача" onChange={(e) => setTk(tk.map((x, j) => j === i ? { ...x, title: e.target.value } : x))} />
+									<input className="ei" value={t.plan} onChange={(e) => setTk(tk.map((x, j) => j === i ? { ...x, plan: e.target.value } : x))} />
+									<input className="ei" value={t.fact} onChange={(e) => setTk(tk.map((x, j) => j === i ? { ...x, fact: e.target.value } : x))} />
+									<input className="ei ei-text" value={t.status} onChange={(e) => setTk(tk.map((x, j) => j === i ? { ...x, status: e.target.value } : x))} />
+									<button className="ei-x" onClick={() => setTk(tk.filter((_, j) => j !== i))}><Trash2 size={13} /></button>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+
+				<div style={{ marginTop: 24 }}>
+					<div
+						className="edit-label"
+						style={{ display: 'flex', justifyContent: 'space-between' }}
+					>
+						<span>Чек-лист</span>
+
+						<button
+							className="btn btn-mini"
+							onClick={() =>
+								setTk([
+									...tk,
+									{
+										title: '',
+										status: 'не выполнено',
+										type: 'check',
+									}
+								])
+							}
+						>
+							<Plus size={13} />
+						</button>
+					</div>
+
+					<div className="edit-grid" style={{ marginTop: 8 }}>
+						{checkTasks.map((t) => {
+							const i = tk.findIndex(x => x === t);
+
+							return (
+								<div
+									key={i}
+									style={{
+										display: 'grid',
+										gridTemplateColumns: '30px 1fr auto',
+										gap: 8,
+										alignItems: 'center'
+									}}
+								>
+									<input
+										type="checkbox"
+										checked={t.status === 'выполнено'}
+										onChange={(e) =>
+											setTk(
+												tk.map((x, j) =>
+													j === i
+														? {
+															...x,
+															status: e.target.checked
+																? 'выполнено'
+																: 'не выполнено',
+														}
+														: x
+												)
+											)
+										}
+									/>
+
+									<input
+										className="ei ei-text"
+										value={t.title}
+										placeholder="Пункт чек-листа"
+										onChange={(e) =>
+											setTk(
+												tk.map((x, j) =>
+													j === i
+														? { ...x, title: e.target.value }
+														: x
+												)
+											)
+										}
+									/>
+
+									<button
+										className="ei-x"
+										onClick={() => setTk(tk.filter((_, j) => j !== i))}
+									>
+										<Trash2 size={13} />
+									</button>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+
+				<div>
+					<div className="edit-label">Результаты для бизнеса</div>
+					<div className="edit-grid" style={{ marginTop: 8 }}>
+						{[['ad_clicks', 'Переходов с рекламы'], ['ad_price', 'Цена перехода, ₽'], ['ad_budget', 'Бюджет размещения, ₽']].map(([k, lbl]) => (
+							<div key={k} style={{ display: 'grid', gridTemplateColumns: '1fr .8fr', gap: 6, alignItems: 'center' }}>
+								<span style={{ fontSize: 13 }}>{lbl}</span>
+								<input className="ei" value={biz[k] ?? ''} onChange={(e) => setBiz({ ...biz, [k]: e.target.value })} />
+							</div>
+						))}
+					</div>
+				</div>
+			</div>
+
+			<div className="edit-label" style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between' }}>
+				<span>Топ-контент (посты / Reels)</span>
+				<button className="btn btn-mini" onClick={() => setCt([...ct, { platform: 'vk', kind: 'post', title: '', views: 0, reactions: 0, comments: 0, reposts: 0, insight: '' }])}><Plus size={13} /></button>
+			</div>
+			<div className="edit-grid" style={{ marginTop: 8 }}>
+				{ct.map((c, i) => (
+					<div key={i} style={{ display: 'grid', gridTemplateColumns: '.9fr 2fr .8fr .8fr 2fr auto', gap: 6 }}>
+						<select className="ei ei-text" value={c.platform} onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, platform: e.target.value } : x))}>
+							{PLIST.map((p) => <option key={p} value={p}>{platformNames[p]}</option>)}
+						</select>
+						<input className="ei ei-text" value={c.title} placeholder="Заголовок" onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, title: e.target.value } : x))} />
+						<input className="ei" type="number" value={c.views} placeholder="просм." onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, views: num(e) } : x))} />
+						<input className="ei" type="number" value={c.reactions} placeholder="реакц." onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, reactions: num(e) } : x))} />
+						<input className="ei ei-text" value={c.insight || ''} placeholder="Вывод" onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, insight: e.target.value } : x))} />
+						<div style={{
+							display: 'flex',
+							alignItems: 'center',
+							gap: 12,
+							flexDirection: 'column-reverse'
+						}}>
+							<input
+								id={`file-${i}`}
+								type="file"
+								accept="image/*"
+								onChange={(e) => uploadImage(i, e.target.files[0])}
+								style={{ display: 'none' }}
+							/>
+
+							<label
+								htmlFor={`file-${i}`}
+								style={{
+									display: 'inline-flex',
+									alignItems: 'center',
+									gap: 8,
+									padding: '10px 16px',
+									background: '#f0a29b24',
+									color: 'var(--redL)',
+									borderRadius: 8,
+									cursor: 'pointer',
+									fontSize: 14,
+									fontWeight: 500,
+									transition: 'background .2s'
+								}}
+							>
+								Выбрать изображение
+							</label>
+
+							{c.image && (
+								<img
+									src={`/storage/${c.image}`}
+									style={{
+										width: 60,
+										height: 60,
+										objectFit: 'cover',
+										borderRadius: 6
+									}}
+								/>
+							)}
+						</div>
+						<button className="ei-x" onClick={() => setCt(ct.filter((_, j) => j !== i))}><Trash2 size={13} /></button>
+					</div>
+				))}
+			</div>
+
+			<div className="two" style={{ marginTop: 18 }}>
+				<div>
+					<div className="edit-label">Выводы месяца</div>
+					<textarea className="summary-inp" rows={4} value={summary} onChange={(e) => setSummary(e.target.value)} style={{ marginTop: 8 }} />
+				</div>
+				<div>
+					<div className="edit-label">План на следующий месяц (каждый пункт с новой строки)</div>
+					<textarea className="summary-inp" rows={4} value={plan} onChange={(e) => setPlan(e.target.value)} style={{ marginTop: 8 }} />
+				</div>
+			</div>
+			<div className="edit-label" style={{ marginTop: 14 }}>Работа с сообществом</div>
+			<textarea className="summary-inp" rows={2} value={community} onChange={(e) => setCommunity(e.target.value)} style={{ marginTop: 8 }} />
+		</Panel>
+	);
+}
