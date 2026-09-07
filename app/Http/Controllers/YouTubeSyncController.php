@@ -47,7 +47,8 @@ class YouTubeSyncController extends Controller
         try {
             $days = $yt->dailyStats($channel['id'], $start->toDateString(), $end->toDateString());
         } catch (YouTubeApiException $e) {
-            if ($e->getCode() !== 403) {
+            // 403 приходит и когда API не включён в Google Cloud (accessNotConfigured) — это не про права на канал
+            if ($e->getCode() !== 403 || str_contains($e->getMessage(), 'accessNotConfigured')) {
                 return back()->with('error', 'Ошибка YouTube Analytics: '.$e->getMessage());
             }
             $statsAvailable = false;
