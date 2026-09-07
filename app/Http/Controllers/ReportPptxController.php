@@ -30,35 +30,50 @@ class ReportPptxController extends Controller
             return $out;
         };
 
-        // series: last 6 months views per platform
-        $short = ['', 'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+        // series: last 6 months per platform (подписчики, просмотры, взаимодействия)
+        $months = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
         $history = Report::where('project_id', $report->project_id)
             ->where(fn ($q) => $q->where('year', '<', $report->year)
                 ->orWhere(fn ($q2) => $q2->where('year', $report->year)->where('month', '<=', $report->month)))
             ->with('platformStats')->orderByDesc('year')->orderByDesc('month')->limit(6)->get()->reverse()->values();
 
-        $series = $history->map(function ($r) use ($short) {
-            $row = ['k' => $short[$r->month]];
+        $series = $history->map(function ($r) use ($months) {
+            $row = ['k' => $months[$r->month]];
             foreach ($this->platforms as $p) {
                 $ps = $r->platformStats->firstWhere('platform', $p);
-                $row[$p] = ['views' => $ps ? $ps->views : 0];
+                $row[$p] = [
+                    'subs' => $ps?->subs ?? 0,
+                    'views' => $ps?->views ?? 0,
+                    'inter' => $ps?->inter ?? 0,
+                ];
             }
             return $row;
         })->all();
 
+        // абсолютные пути картинок для вставки в презентацию
+        $img = fn (?string $rel) => $rel && file_exists(storage_path('app/public/'.$rel))
+            ? storage_path('app/public/'.$rel)
+            : null;
+
         $payload = [
             'client' => $report->project->name,
             'period' => $report->period_label,
+            'period_month' => $months[$report->month],
+            'prev_month' => $prev ? $months[$prev->month] : null,
             'platformNames' => $this->names,
             'current' => $map($report),
             'previous' => ['label' => $prev?->period_label, 'stats' => $prev ? $map($prev) : null],
             'series' => $series,
             'tasks' => $report->tasks->map(fn ($t) => ['title' => $t->title, 'plan' => $t->plan, 'fact' => $t->fact, 'status' => $t->status])->all(),
-            'content' => $report->contentItems->map(fn ($c) => ['platform' => $c->platform, 'kind' => $c->kind, 'title' => $c->title, 'views' => $c->views, 'reactions' => $c->reactions, 'comments' => $c->comments, 'reposts' => $c->reposts, 'insight' => $c->insight])->all(),
+            'content' => $report->contentItems->map(fn ($c) => ['platform' => $c->platform, 'kind' => $c->kind, 'title' => $c->title, 'views' => $c->views, 'reactions' => $c->reactions, 'comments' => $c->comments, 'reposts' => $c->reposts, 'insight' => $c->insight, 'image' => $img($c->image)])->all(),
             'business' => $report->business,
+            'metric_notes' => $report->metric_notes,
             'summary' => $report->summary,
             'plan_next' => $report->plan_next,
-            'community' => $report->community,
+            'community' => collect($report->community ?? [])->map(fn ($c) => [
+                'caption' => $c['caption'] ?? '',
+                'image' => $img($c['image'] ?? null),
+            ])->values()->all(),
         ];
 
         $stamp = Str::random(8);

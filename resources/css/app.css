@@ -211,7 +211,10 @@ button { font-family: inherit; cursor: pointer; }
 /* ---------- misc ---------- */
 .empty { text-align: center; padding: 60px 20px; color: var(--mut); }
 .empty h3 { font-size: 18px; color: var(--wine); margin-bottom: 6px; }
-.flash { position: fixed; right: 20px; bottom: 20px; z-index: 50; background: var(--wine); color: var(--creamTx); padding: 12px 18px; border-radius: 12px; font-size: 13px; font-weight: 700; box-shadow: 0 14px 34px rgba(76,24,28,.3); }
+.flash { position: fixed; right: 20px; bottom: 20px; z-index: 50; background: var(--wine); color: var(--creamTx); padding: 12px 18px; border-radius: 12px; font-size: 13px; font-weight: 700; box-shadow: 0 14px 34px rgba(76,24,28,.3); max-width: 420px; }
+.flash.err { background: #8C1F1F; }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--mut); font-size: 11.5px; font-weight: 600; padding: 8px 4px 0; margin-top: 10px; }
 .wtable { overflow-x: auto; }
 .wtable table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; color: var(--creamTx); }

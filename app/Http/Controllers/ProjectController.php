@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Services\VkApi;
+use App\Services\VkApiException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -40,6 +42,7 @@ class ProjectController extends Controller
             'color' => 'nullable|string|max:9',
             'client_period' => 'nullable|string|max:255',
             'manager' => 'nullable|string|max:255',
+            'vk_group' => 'nullable|string|max:255',
             'is_active' => 'boolean',
         ]);
 
@@ -49,6 +52,7 @@ class ProjectController extends Controller
             'color' => $data['color'] ?? '#6C4CF0',
             'client_period'   => $data['client_period'] ?? null,
             'manager'         => $data['manager'] ?? null,
+            'vk_group'        => $data['vk_group'] ?? null,
             'is_active'       => $data['is_active'] ?? true,
         ]);
 
@@ -75,6 +79,8 @@ class ProjectController extends Controller
                 'color' => $project->color,
                 'client_period' => $project->client_period,
                 'manager' => $project->manager,
+                'vk_group' => $project->vk_group,
+                'has_vk_token' => (bool) $project->vk_token,
                 'is_active' => $project->is_active,
             ],
             'reports' => $reports,
@@ -88,6 +94,9 @@ class ProjectController extends Controller
             'color'         => 'nullable|string|max:9',
             'client_period' => 'nullable|string|max:255',
             'manager'       => 'nullable|string|max:255',
+            'vk_group'      => 'nullable|string|max:255',
+            'vk_token'        => 'nullable|string|max:1024',
+            'vk_token_remove' => 'boolean',
             'is_active'     => 'boolean',
         ]);
 
@@ -96,8 +105,28 @@ class ProjectController extends Controller
             'color'         => $data['color'] ?? '#6C4CF0',
             'client_period' => $data['client_period'] ?? null,
             'manager'       => $data['manager'] ?? null,
+            'vk_group'      => $data['vk_group'] ?? null,
             'is_active'     => $data['is_active'] ?? false,
         ]);
+
+        if ($data['vk_token_remove'] ?? false) {
+            $project->update(['vk_token' => null]);
+        } elseif ($token = trim($data['vk_token'] ?? '')) {
+            try {
+                (new VkApi($token))->call('users.get');
+            } catch (VkApiException $e) {
+                if (str_contains($e->getMessage(), 'service token')) {
+                    return back()->with('error', 'Это сервисный ключ приложения — он не даёт доступа к статистике. Нужен ключ доступа сообщества (Управление сообществом → Работа с API → Ключи доступа).');
+                }
+                // 27 — ключ сообщества: users.get недоступен, но для статистики он подходит
+                if ($e->getCode() !== 27) {
+                    return back()->with('error', 'Ключ ВК не прошёл проверку: ' . $e->getMessage());
+                }
+            } catch (\Throwable) {
+                return back()->with('error', 'Не удалось связаться с VK API — ключ не сохранён');
+            }
+            $project->update(['vk_token' => $token]);
+        }
 
         return back()->with('success', 'Проект обновлён');
     }

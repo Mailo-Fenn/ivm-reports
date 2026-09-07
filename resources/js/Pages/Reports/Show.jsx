@@ -8,7 +8,7 @@ import {
 import {
 	Users, Eye, Radar, Heart, Target, MousePointerClick, FileText, Film,
 	TrendingUp, TrendingDown, Minus, ArrowRight, LayoutGrid, Pencil, Check, X,
-	FileDown, Trash2, Plus,
+	FileDown, Trash2, Plus, RefreshCw,
 } from 'lucide-react';
 import Layout from '../../Layout';
 
@@ -18,6 +18,15 @@ const fInt = (n) => Math.round(Number(n) || 0).toLocaleString('ru-RU');
 const pct = (n) => Math.round(Number(n) || 0) + '%';
 const kAxis = (v) => (Math.abs(v) >= 1000 ? (v / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 0 }) + 'к' : String(v));
 const erOf = (o) => (o && o.subs ? +((o.inter / o.subs) * 100).toFixed(1) : 0);
+const bizNum = (v) => Number(String(v ?? '').replace(/\s/g, '').replace(',', '.')) || 0;
+const bizRate = (biz, key, mult = 1) => {
+	const budget = bizNum(biz?.ad_budget), base = bizNum(biz?.[key]);
+	return budget > 0 && base > 0 ? (budget / base) * mult : null;
+};
+const bizRateFmt = (biz, key, mult = 1) => {
+	const r = bizRate(biz, key, mult);
+	return r ? r.toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' ₽' : '—';
+};
 
 const METR = {
 	subs: { label: 'Подписчики', icon: Users, fmt: fInt },
@@ -179,9 +188,10 @@ export default function Show({ project, report, reports, platformNames, current,
 	const [ct, setCt] = useState(content || []);
 	const [summary, setSummary] = useState(report.summary || '');
 	const [plan, setPlan] = useState(report.plan_next || '');
-	const [community, setCommunity] = useState(report.community || '');
+	const [community, setCommunity] = useState(Array.isArray(report.community) ? report.community : []);
 	const [biz, setBiz] = useState(report.business || {});
 	const [wk, setWk] = useState(weeks || []);
+	const [mn, setMn] = useState(report.metric_notes || {});
 
 	useEffect(() => {
 
@@ -219,7 +229,8 @@ export default function Show({ project, report, reports, platformNames, current,
 	useEffect(() => {
 		setPf(initPf()); setTk(tasks || []); setCt(content || []);
 		setSummary(report.summary || ''); setPlan(report.plan_next || '');
-		setCommunity(report.community || ''); setBiz(report.business || {}); setWk(weeks || []);
+		setCommunity(Array.isArray(report.community) ? report.community : []); setBiz(report.business || {}); setWk(weeks || []);
+		setMn(report.metric_notes || {});
 	}, [report.id]);
 
 	const num = (e) => (e.target.value === '' ? 0 : Number(e.target.value));
@@ -256,6 +267,7 @@ export default function Show({ project, report, reports, platformNames, current,
 			plan_next: plan,
 			community,
 			weeks: wk,
+			metric_notes: mn,
 		}, {
 			preserveScroll: true,
 
@@ -276,9 +288,20 @@ export default function Show({ project, report, reports, platformNames, current,
 	const cancel = () => {
 		setEditing(false); setPf(initPf()); setTk(tasks || []); setCt(content || []);
 		setSummary(report.summary || ''); setPlan(report.plan_next || '');
-		setCommunity(report.community || ''); setBiz(report.business || {}); setWk(weeks || []);
+		setCommunity(Array.isArray(report.community) ? report.community : []); setBiz(report.business || {}); setWk(weeks || []);
+		setMn(report.metric_notes || {});
 	};
 	const removeReport = () => { if (confirm('Удалить отчёт?')) router.delete(`/reports/${report.id}`); };
+
+	const [pulling, setPulling] = useState(false);
+	const pullVk = () => {
+		if (!confirm('Подтянуть данные из ВК? Понедельные цифры ВКонтакте (подписчики, просмотры, охваты, взаимодействия, посты) будут перезаписаны данными из API. Переходы на сайт и сторис останутся как есть.')) return;
+		setPulling(true);
+		router.post(`/reports/${report.id}/vk-sync`, {}, {
+			preserveScroll: true,
+			onFinish: () => setPulling(false),
+		});
+	};
 
 	return (
 		<Layout crumbs={[{ label: project.name, href: `/projects/${project.id}` }, { label: report.period_label }]}>
@@ -296,6 +319,7 @@ export default function Show({ project, report, reports, platformNames, current,
 					) : (
 						<>
 							<button className="btn btn-primary" onClick={() => setEditing(true)}><Pencil size={16} /> Редактировать</button>
+							<button className="btn" onClick={pullVk} disabled={pulling}><RefreshCw size={16} className={pulling ? 'spin' : undefined} /> {pulling ? 'Загрузка…' : 'Подтянуть из ВК'}</button>
 							<a className="btn btn-accent" href={`/reports/${report.id}/pptx`}><FileDown size={16} /> Скачать PowerPoint</a>
 							<button className="btn btn-danger" onClick={removeReport}><Trash2 size={16} /></button>
 						</>
@@ -337,7 +361,7 @@ export default function Show({ project, report, reports, platformNames, current,
 				? <Overview {...{ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks: tk, biz, summary, plan, community, setView, PLIST }} />
 				: <PlatformView pid={view} {...{ platformNames, stats, previous, liveSeries, content: ct, PLIST }} />}
 
-			{editing && <Editor {...{ platformNames, PLIST, togglePlatform, current, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, num }} />}
+			{editing && <Editor {...{ platformNames, PLIST, togglePlatform, current, previous, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, mn, setMn, num }} />}
 
 			<footer className="foot"><span>Истина в маркетинге · istinavm.ru</span><span>{project.name} · {report.period_label}</span></footer>
 		</Layout>
@@ -432,10 +456,14 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 				</Panel>
 				<Panel eyebrow="Бизнес" title="Результаты" light>
 					<div className="biz-grid">
-						<div className="biz"><div className="biz-v">{fInt(stats.vk?.leads || 0)}</div><div className="biz-l">переходов на сайт из ВК</div></div>
-						<div className="biz"><div className="biz-v">{biz.ad_clicks ? fInt(biz.ad_clicks) : '—'}</div><div className="biz-l">переходов с рекламы</div></div>
-						<div className="biz"><div className="biz-v">{biz.ad_price ? biz.ad_price + ' ₽' : '—'}</div><div className="biz-l">цена перехода</div></div>
-						<div className="biz"><div className="biz-v">{biz.ad_budget ? fInt(biz.ad_budget) + ' ₽' : '—'}</div><div className="biz-l">бюджет размещения</div></div>
+						<div className="biz"><div className="biz-v">{fInt(stats.vk?.leads || 0)}</div><div className="biz-l">переходы на сайт</div></div>
+						<div className="biz"><div className="biz-v">{biz.ad_budget ? fInt(biz.ad_budget) + ' ₽' : '—'}</div><div className="biz-l">бюджет рекламы</div></div>
+						<div className="biz"><div className="biz-v">{biz.ad_clicks ? fInt(biz.ad_clicks) : '—'}</div><div className="biz-l">переходы с рекламы</div></div>
+						<div className="biz"><div className="biz-v">{bizRateFmt(biz, 'ad_clicks')}</div><div className="biz-l">цена перехода</div></div>
+						<div className="biz"><div className="biz-v">{biz.ad_subs ? fInt(biz.ad_subs) : '—'}</div><div className="biz-l">подписчики с рекламы</div></div>
+						<div className="biz"><div className="biz-v">{bizRateFmt(biz, 'ad_subs')}</div><div className="biz-l">цена подписчика</div></div>
+						<div className="biz"><div className="biz-v">{biz.ad_views ? fInt(biz.ad_views) : '—'}</div><div className="biz-l">просмотры с рекламы</div></div>
+						<div className="biz"><div className="biz-v">{bizRateFmt(biz, 'ad_views', 1000)}</div><div className="biz-l">цена 1000 просмотров</div></div>
 					</div>
 				</Panel>
 			</div>
@@ -449,9 +477,16 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 				</Panel>
 			</div>
 
-			{community && (
+			{Array.isArray(community) && community.length > 0 && (
 				<Panel eyebrow="Сообщество" title="Работа с сообществом">
-					<p className="plain">{community}</p>
+					<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+						{community.map((c, i) => (
+							<figure key={i} style={{ margin: 0 }}>
+								{c.image && <img src={`/storage/${c.image}`} alt={c.caption || ''} style={{ width: '100%', borderRadius: 10, display: 'block' }} />}
+								{c.caption && <figcaption className="plain" style={{ marginTop: c.image ? 8 : 0 }}>{c.caption}</figcaption>}
+							</figure>
+						))}
+					</div>
 				</Panel>
 			)}
 		</>
@@ -525,7 +560,7 @@ function PlatformView({ pid, platformNames, stats, previous, liveSeries, content
 										<div className="post-title">{c.title}</div>
 										{c.image && (
 											<img
-												src={`/storage/${c.image}`}
+												src={`/storage/app/public/${c.image}`}
 												alt={c.title}
 												className="content-image"
 											/>
@@ -535,8 +570,8 @@ function PlatformView({ pid, platformNames, stats, previous, liveSeries, content
 										<div className="post-metrics">
 											<div><b>{fInt(c.views)}</b><span>Просмотры</span></div>
 											<div><b>{fInt(c.reactions)}</b><span>Реакции</span></div>
-											<div><b>{fInt(c.comments)}</b><span>Комм.</span></div>
-											<div><b>{fInt(c.reposts)}</b><span>Репосты</span></div>
+											{c.kind !== 'story' && <div><b>{fInt(c.comments)}</b><span>Комм.</span></div>}
+											{c.kind !== 'story' && <div><b>{fInt(c.reposts)}</b><span>Репосты</span></div>}
 										</div>
 										{c.insight && <div className="post-ins"><b>Вывод:</b> {c.insight}</div>}
 									</div>
@@ -550,9 +585,19 @@ function PlatformView({ pid, platformNames, stats, previous, liveSeries, content
 	);
 }
 
-function Editor({ platformNames, PLIST, togglePlatform, current, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, num }) {
+function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, mn, setMn, num }) {
 	const setStat = (p, k, v) => setPf((s) => ({ ...s, [p]: { ...s[p], [k]: v } }));
 	const statKeys = ['subs', 'views', 'reach', 'inter', 'leads', 'posts', 'stories'];
+	// колонки таблицы топ-контента: площадка, тип, заголовок, 4 метрики, вывод, картинка, удалить;
+	// последние две — фиксированные, а fr-колонки через minmax(…), чтобы шапка и строки
+	// (отдельные гриды) совпадали по колонкам пиксель в пиксель;
+	// просмотрам гарантированы 96px под шестизначные числа
+	// метрики и служебные колонки фиксированные (минимум под подпись/число),
+	// всё освободившееся пространство уходит заголовку и выводу
+	const CT_GRID = '112px 86px minmax(0,2fr) 112px 64px 54px 68px minmax(0,1.2fr) 180px 30px';
+	// поля с переносом: высота по содержимому (field-sizing), остальные поля строки
+	// растягиваются гридом до самого высокого из них
+	const wrapArea = { resize: 'none', overflow: 'hidden', whiteSpace: 'pre-wrap', fontFamily: 'inherit', width: '100%', minWidth: 0, fieldSizing: 'content' };
 	const planTasks = tk.filter(t => t.type !== 'check');
 	const checkTasks = tk.filter(t => t.type === 'check');
 
@@ -571,6 +616,35 @@ function Editor({ platformNames, PLIST, togglePlatform, current, pf, setPf, tk, 
 
 			setCt(ct =>
 				ct.map((item, i) =>
+					i === index
+						? {
+							...item,
+							image: data.path,
+						}
+						: item
+				)
+			);
+		} catch (e) {
+			alert('Ошибка загрузки изображения');
+			console.error(e);
+		}
+	};
+
+	const uploadCommunityImage = async (index, file) => {
+		if (!file) return;
+
+		const formData = new FormData();
+		formData.append('image', file);
+
+		try {
+			const { data } = await axios.post('/upload', formData, {
+				headers: {
+					'Content-Type': 'multipart/form-data',
+				},
+			});
+
+			setCommunity(list =>
+				list.map((item, i) =>
 					i === index
 						? {
 							...item,
@@ -613,6 +687,114 @@ function Editor({ platformNames, PLIST, togglePlatform, current, pf, setPf, tk, 
 						</span>
 					</label>
 				))}
+			</div>
+
+			<div className='two'>
+				<div>
+					<div className="edit-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+						<span>Задачи (план / факт)</span>
+						<button className="btn btn-mini" onClick={() => setTk([...tk, { title: '', plan: '', fact: '', status: 'выполнено', type: 'plan_fact' }])}><Plus size={13} /></button>
+					</div>
+					<div className="edit-grid" style={{ marginTop: 8 }}>
+						{planTasks.map((t) => {
+							const i = tk.findIndex(x => x === t);
+
+							return (
+								<div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr .7fr .7fr 1.2fr auto', gap: 6 }}>
+									<input className="ei ei-text" value={t.title} placeholder="Задача" onChange={(e) => setTk(tk.map((x, j) => j === i ? { ...x, title: e.target.value } : x))} />
+									<input className="ei" value={t.plan} onChange={(e) => setTk(tk.map((x, j) => j === i ? { ...x, plan: e.target.value } : x))} />
+									<input className="ei" value={t.fact} onChange={(e) => setTk(tk.map((x, j) => j === i ? { ...x, fact: e.target.value } : x))} />
+									<input className="ei ei-text" value={t.status} onChange={(e) => setTk(tk.map((x, j) => j === i ? { ...x, status: e.target.value } : x))} />
+									<button className="ei-x" onClick={() => setTk(tk.filter((_, j) => j !== i))}><Trash2 size={13} /></button>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+
+				<div style={{ marginTop: 24 }}>
+					<div
+						className="edit-label"
+						style={{ display: 'flex', justifyContent: 'space-between' }}
+					>
+						<span>Чек-лист</span>
+
+						<button
+							className="btn btn-mini"
+							onClick={() =>
+								setTk([
+									...tk,
+									{
+										title: '',
+										status: 'не выполнено',
+										type: 'check',
+									}
+								])
+							}
+						>
+							<Plus size={13} />
+						</button>
+					</div>
+
+					<div className="edit-grid" style={{ marginTop: 8 }}>
+						{checkTasks.map((t) => {
+							const i = tk.findIndex(x => x === t);
+
+							return (
+								<div
+									key={i}
+									style={{
+										display: 'grid',
+										gridTemplateColumns: '30px 1fr auto',
+										gap: 8,
+										alignItems: 'center'
+									}}
+								>
+									<input
+										type="checkbox"
+										checked={t.status === 'выполнено'}
+										onChange={(e) =>
+											setTk(
+												tk.map((x, j) =>
+													j === i
+														? {
+															...x,
+															status: e.target.checked
+																? 'выполнено'
+																: 'не выполнено',
+														}
+														: x
+												)
+											)
+										}
+									/>
+
+									<input
+										className="ei ei-text"
+										value={t.title}
+										placeholder="Пункт чек-листа"
+										onChange={(e) =>
+											setTk(
+												tk.map((x, j) =>
+													j === i
+														? { ...x, title: e.target.value }
+														: x
+												)
+											)
+										}
+									/>
+
+									<button
+										className="ei-x"
+										onClick={() => setTk(tk.filter((_, j) => j !== i))}
+									>
+										<Trash2 size={13} />
+									</button>
+								</div>
+							);
+						})}
+					</div>
+				</div>
 			</div>
 
 			<div className='platrorm-stat-wrapper'>
@@ -757,117 +939,100 @@ function Editor({ platformNames, PLIST, togglePlatform, current, pf, setPf, tk, 
 				</table>
 			</div>
 
-			<div className="two">
-				<div>
-					<div className="edit-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-						<span>Задачи (план / факт)</span>
-						<button className="btn btn-mini" onClick={() => setTk([...tk, { title: '', plan: '', fact: '', status: 'выполнено', type: 'plan_fact' }])}><Plus size={13} /></button>
-					</div>
-					<div className="edit-grid" style={{ marginTop: 8 }}>
-						{planTasks.map((t) => {
-							const i = tk.findIndex(x => x === t);
+			<div className="edit-label" style={{ marginTop: 14 }}>Выводы по площадкам (текст для слайдов презентации)</div>
+			<div className='platrorm-stat-wrapper'>
+				{PLIST.map(platform => (
+					<details key={platform} style={{ marginTop: 10 }}>
+						<summary className="edit-label" style={{ cursor: 'pointer' }}>
+							Выводы · {platformNames[platform]}
+						</summary>
+						<div style={{ marginTop: 12, display: 'grid', gap: 14 }}>
+							{[['subs', 'Подписчики'], ['views', 'Просмотры'], ['inter', 'Взаимодействия']].map(([mk, label]) => {
+								const list = mn[platform]?.[mk] || [];
+								const setList = (nl) => setMn({ ...mn, [platform]: { ...(mn[platform] || {}), [mk]: nl } });
+								// динамика к прошлому месяцу — подсказка при написании вывода
+								const prevVal = previous?.stats?.[platform]?.[mk];
+								const diff = prevVal === null || prevVal === undefined ? null : (Number(pf[platform]?.[mk]) || 0) - Number(prevVal);
+								return (
+									<div key={mk}>
+										<div className="edit-label" style={{ fontSize: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+											<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{label} <Delta diff={diff} /></span>
+											<button className="btn btn-mini" onClick={() => setList([...list, ''])}><Plus size={13} /></button>
+										</div>
+										<div className="edit-grid" style={{ marginTop: 6 }}>
+											{list.map((v, i) => (
+												<div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 6 }}>
+													<input className="ei ei-text" value={v} placeholder="Текст вывода для презентации" onChange={(e) => setList(list.map((x, j) => j === i ? e.target.value : x))} />
+													<button className="ei-x" onClick={() => setList(list.filter((_, j) => j !== i))}><Trash2 size={13} /></button>
+												</div>
+											))}
+										</div>
+									</div>
+								);
+							})}
+						</div>
+					</details>
+				))}
+			</div>
 
-							return (
-								<div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr .7fr .7fr 1.2fr auto', gap: 6 }}>
-									<input className="ei ei-text" value={t.title} placeholder="Задача" onChange={(e) => setTk(tk.map((x, j) => j === i ? { ...x, title: e.target.value } : x))} />
-									<input className="ei" value={t.plan} onChange={(e) => setTk(tk.map((x, j) => j === i ? { ...x, plan: e.target.value } : x))} />
-									<input className="ei" value={t.fact} onChange={(e) => setTk(tk.map((x, j) => j === i ? { ...x, fact: e.target.value } : x))} />
-									<input className="ei ei-text" value={t.status} onChange={(e) => setTk(tk.map((x, j) => j === i ? { ...x, status: e.target.value } : x))} />
-									<button className="ei-x" onClick={() => setTk(tk.filter((_, j) => j !== i))}><Trash2 size={13} /></button>
-								</div>
-							);
-						})}
-					</div>
-				</div>
+			<div className="edit-label" style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between' }}>
+				<span>Работа с сообществом</span>
+				<button className="btn btn-mini" onClick={() => setCommunity([...community, { image: null, caption: '' }])}><Plus size={13} /></button>
+			</div>
+			<div className="edit-grid" style={{ marginTop: 8 }}>
+				{community.map((c, i) => (
+					<div key={i} style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr auto', gap: 6, alignItems: 'center' }}>
+						<input
+							id={`comm-file-${i}`}
+							type="file"
+							accept="image/*"
+							onChange={(e) => uploadCommunityImage(i, e.target.files[0])}
+							style={{ display: 'none' }}
+						/>
 
-				<div style={{ marginTop: 24 }}>
-					<div
-						className="edit-label"
-						style={{ display: 'flex', justifyContent: 'space-between' }}
-					>
-						<span>Чек-лист</span>
-
-						<button
-							className="btn btn-mini"
-							onClick={() =>
-								setTk([
-									...tk,
-									{
-										title: '',
-										status: 'не выполнено',
-										type: 'check',
-									}
-								])
-							}
+						<label
+							htmlFor={`comm-file-${i}`}
+							style={{
+								display: 'inline-flex',
+								alignItems: 'center',
+								gap: 8,
+								padding: '10px 16px',
+								background: '#f0a29b24',
+								color: 'var(--redL)',
+								borderRadius: 8,
+								cursor: 'pointer',
+								fontSize: 14,
+								fontWeight: 500,
+								transition: 'background .2s'
+							}}
 						>
-							<Plus size={13} />
-						</button>
+							{c.image ? 'Заменить изображение' : 'Выбрать изображение'}
+						</label>
+
+						{c.image ? (
+							<img
+								src={`/storage/${c.image}`}
+								style={{
+									width: 60,
+									height: 60,
+									objectFit: 'cover',
+									borderRadius: 6
+								}}
+							/>
+						) : <span />}
+
+						<input className="ei ei-text" value={c.caption || ''} placeholder="Подпись к изображению" onChange={(e) => setCommunity(community.map((x, j) => j === i ? { ...x, caption: e.target.value } : x))} />
+
+						<button className="ei-x" onClick={() => setCommunity(community.filter((_, j) => j !== i))}><Trash2 size={13} /></button>
 					</div>
+				))}
+			</div>
 
-					<div className="edit-grid" style={{ marginTop: 8 }}>
-						{checkTasks.map((t) => {
-							const i = tk.findIndex(x => x === t);
-
-							return (
-								<div
-									key={i}
-									style={{
-										display: 'grid',
-										gridTemplateColumns: '30px 1fr auto',
-										gap: 8,
-										alignItems: 'center'
-									}}
-								>
-									<input
-										type="checkbox"
-										checked={t.status === 'выполнено'}
-										onChange={(e) =>
-											setTk(
-												tk.map((x, j) =>
-													j === i
-														? {
-															...x,
-															status: e.target.checked
-																? 'выполнено'
-																: 'не выполнено',
-														}
-														: x
-												)
-											)
-										}
-									/>
-
-									<input
-										className="ei ei-text"
-										value={t.title}
-										placeholder="Пункт чек-листа"
-										onChange={(e) =>
-											setTk(
-												tk.map((x, j) =>
-													j === i
-														? { ...x, title: e.target.value }
-														: x
-												)
-											)
-										}
-									/>
-
-									<button
-										className="ei-x"
-										onClick={() => setTk(tk.filter((_, j) => j !== i))}
-									>
-										<Trash2 size={13} />
-									</button>
-								</div>
-							);
-						})}
-					</div>
-				</div>
-
+			<div className="two" style={{ marginTop: 18 }}>
 				<div>
 					<div className="edit-label">Результаты для бизнеса</div>
 					<div className="edit-grid" style={{ marginTop: 8 }}>
-						{[['ad_clicks', 'Переходов с рекламы'], ['ad_price', 'Цена перехода, ₽'], ['ad_budget', 'Бюджет размещения, ₽']].map(([k, lbl]) => (
+						{[['ad_clicks', 'Переходов с рекламы'], ['ad_subs', 'Подписчики с рекламы'], ['ad_views', 'Просмотры с рекламы'], ['ad_budget', 'Бюджет размещения, ₽']].map(([k, lbl]) => (
 							<div key={k} style={{ display: 'grid', gridTemplateColumns: '1fr .8fr', gap: 6, alignItems: 'center' }}>
 								<span style={{ fontSize: 13 }}>{lbl}</span>
 								<input className="ei" value={biz[k] ?? ''} onChange={(e) => setBiz({ ...biz, [k]: e.target.value })} />
@@ -878,24 +1043,60 @@ function Editor({ platformNames, PLIST, togglePlatform, current, pf, setPf, tk, 
 			</div>
 
 			<div className="edit-label" style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between' }}>
-				<span>Топ-контент (посты / Reels)</span>
+				<span>Топ-контент (посты / сторис)</span>
 				<button className="btn btn-mini" onClick={() => setCt([...ct, { platform: 'vk', kind: 'post', title: '', views: 0, reactions: 0, comments: 0, reposts: 0, insight: '' }])}><Plus size={13} /></button>
 			</div>
 			<div className="edit-grid" style={{ marginTop: 8 }}>
+				{ct.length > 0 && (
+					<div style={{ display: 'grid', gridTemplateColumns: CT_GRID, gap: 6, fontSize: 11, fontWeight: 700, color: 'var(--mut)', textTransform: 'uppercase', letterSpacing: '.04em', textAlign: 'center' }}>
+						<span>Площадка</span>
+						<span>Тип</span>
+						<span>Заголовок</span>
+						<span>Просмотры</span>
+						<span>Реакции</span>
+						<span>Комм.</span>
+						<span>Репосты</span>
+						<span>Вывод</span>
+						<span />
+						<span />
+					</div>
+				)}
 				{ct.map((c, i) => (
-					<div key={i} style={{ display: 'grid', gridTemplateColumns: '.9fr 2fr .8fr .8fr 2fr auto', gap: 6 }}>
-						<select className="ei ei-text" value={c.platform} onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, platform: e.target.value } : x))}>
+					<div key={i} style={{ display: 'grid', gridTemplateColumns: CT_GRID, gap: 6, alignItems: 'stretch' }}>
+						<select className="ei ei-text" style={{ minWidth: 0, width: '100%' }} value={c.platform} onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, platform: e.target.value } : x))}>
 							{PLIST.map((p) => <option key={p} value={p}>{platformNames[p]}</option>)}
 						</select>
-						<input className="ei ei-text" value={c.title} placeholder="Заголовок" onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, title: e.target.value } : x))} />
-						<input className="ei" type="number" value={c.views} placeholder="просм." onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, views: num(e) } : x))} />
-						<input className="ei" type="number" value={c.reactions} placeholder="реакц." onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, reactions: num(e) } : x))} />
-						<input className="ei ei-text" value={c.insight || ''} placeholder="Вывод" onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, insight: e.target.value } : x))} />
+						<select className="ei ei-text" style={{ minWidth: 0, width: '100%' }} value={c.kind === 'story' ? 'story' : 'post'} onChange={(e) => setCt(ct.map((x, j) => j === i ? (e.target.value === 'story' ? { ...x, kind: 'story', comments: 0, reposts: 0 } : { ...x, kind: 'post' }) : x))}>
+							<option value="post">Пост</option>
+							<option value="story">Сторис</option>
+						</select>
+						<textarea
+							className="ei ei-text"
+							value={c.title}
+							placeholder="Заголовок"
+							rows={1}
+							style={{ ...wrapArea }}
+							onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, title: e.target.value } : x))}
+						/>
+						<input className="ei" style={{ minWidth: 0, width: '100%' }} type="number" value={c.views} onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, views: num(e) } : x))} />
+						<input className="ei" style={{ minWidth: 0, width: '100%' }} type="number" value={c.reactions} onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, reactions: num(e) } : x))} />
+						<input className="ei" style={{ minWidth: 0, width: '100%' }} type="number" value={c.kind === 'story' ? 0 : (c.comments ?? 0)} disabled={c.kind === 'story'} onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, comments: num(e) } : x))} />
+						<input className="ei" style={{ minWidth: 0, width: '100%' }} type="number" value={c.kind === 'story' ? 0 : (c.reposts ?? 0)} disabled={c.kind === 'story'} onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, reposts: num(e) } : x))} />
+						<textarea
+							className="ei ei-text"
+							value={c.insight || ''}
+							placeholder="Вывод"
+							rows={1}
+							style={{ ...wrapArea }}
+							onChange={(e) => setCt(ct.map((x, j) => j === i ? { ...x, insight: e.target.value } : x))}
+						/>
 						<div style={{
 							display: 'flex',
 							alignItems: 'center',
-							gap: 12,
-							flexDirection: 'column-reverse'
+							justifyContent: 'center',
+							gap: 10,
+							alignSelf: 'center',
+							minWidth: 0
 						}}>
 							<input
 								id={`file-${i}`}
@@ -911,32 +1112,34 @@ function Editor({ platformNames, PLIST, togglePlatform, current, pf, setPf, tk, 
 									display: 'inline-flex',
 									alignItems: 'center',
 									gap: 8,
-									padding: '10px 16px',
+									padding: '8px 14px',
 									background: '#f0a29b24',
 									color: 'var(--redL)',
 									borderRadius: 8,
 									cursor: 'pointer',
-									fontSize: 14,
+									fontSize: 13,
 									fontWeight: 500,
+									whiteSpace: 'nowrap',
 									transition: 'background .2s'
 								}}
 							>
-								Выбрать изображение
+								{c.image ? 'Заменить' : 'Изображение'}
 							</label>
 
 							{c.image && (
 								<img
 									src={`/storage/${c.image}`}
 									style={{
-										width: 60,
-										height: 60,
+										width: 38,
+										height: 38,
 										objectFit: 'cover',
-										borderRadius: 6
+										borderRadius: 6,
+										flexShrink: 0
 									}}
 								/>
 							)}
 						</div>
-						<button className="ei-x" onClick={() => setCt(ct.filter((_, j) => j !== i))}><Trash2 size={13} /></button>
+						<button className="ei-x" style={{ alignSelf: 'center' }} onClick={() => setCt(ct.filter((_, j) => j !== i))}><Trash2 size={13} /></button>
 					</div>
 				))}
 			</div>
@@ -951,8 +1154,6 @@ function Editor({ platformNames, PLIST, togglePlatform, current, pf, setPf, tk, 
 					<textarea className="summary-inp" rows={4} value={plan} onChange={(e) => setPlan(e.target.value)} style={{ marginTop: 8 }} />
 				</div>
 			</div>
-			<div className="edit-label" style={{ marginTop: 14 }}>Работа с сообществом</div>
-			<textarea className="summary-inp" rows={2} value={community} onChange={(e) => setCommunity(e.target.value)} style={{ marginTop: 8 }} />
 		</Panel>
 	);
 }

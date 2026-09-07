@@ -10,7 +10,7 @@ use Inertia\Inertia;
 class ReportController extends Controller
 {
     private array $platforms = ['vk', 'ig', 'max'];
-    private array $names = ['vk' => 'ВКонтакте', 'ig' => 'Инстаграм', 'max' => 'Макс'];
+    private array $names = ['vk' => 'ВКонтакте', 'ig' => 'Инстаграм', 'max' => 'Макс', 'tg' => 'Телеграм'];
 
     public function store(Request $request, Project $project)
     {
@@ -125,6 +125,7 @@ class ReportController extends Controller
                 'period_label' => $report->period_label,
                 'summary' => $report->summary, 'plan_next' => $report->plan_next,
                 'community' => $report->community, 'business' => $report->business,
+                'metric_notes' => $report->metric_notes,
             ],
             'reports' => $reports,
             'platformNames' => $this->names,
@@ -154,8 +155,18 @@ class ReportController extends Controller
         $data = $request->validate([
             'summary' => 'nullable|string',
             'plan_next' => 'nullable|string',
-            'community' => 'nullable|string',
+            'community' => 'nullable|array',
+            'community.*.image' => 'nullable|string|max:255',
+            'community.*.caption' => 'nullable|string',
+            'metric_notes' => 'nullable|array',
+            'metric_notes.*' => 'array',
+            'metric_notes.*.*' => 'array',
+            'metric_notes.*.*.*' => 'nullable|string',
             'business' => 'nullable|array',
+            'business.ad_clicks' => 'nullable',
+            'business.ad_subs' => 'nullable',
+            'business.ad_views' => 'nullable',
+            'business.ad_budget' => 'nullable',
             'tasks' => 'array',
             'tasks.*.title' => 'required|string|max:255',
             'tasks.*.plan' => 'nullable|string|max:64',
@@ -174,7 +185,7 @@ class ReportController extends Controller
             'weeks' => 'array',
             'weeks.*.id' => 'nullable|integer',
             'weeks.*.label' => 'required_with:weeks|string|max:255',
-            'weeks.*.subs' => 'nullable|integer|min:0',
+            'weeks.*.subs' => 'nullable|integer',
             'weeks.*.views' => 'nullable|integer|min:0',
             'weeks.*.reach' => 'nullable|integer|min:0',
             'weeks.*.inter' => 'nullable|integer|min:0',
@@ -186,11 +197,33 @@ class ReportController extends Controller
             'tasks.*.type' => 'required|string|in:plan_fact,check',
         ]);
 
+        // выводы по площадкам: оставляем только известные площадки/метрики и непустые строки
+        $notes = [];
+        foreach (($data['metric_notes'] ?? []) as $plat => $metrics) {
+            if (!in_array($plat, ['vk', 'ig', 'max'], true) || !is_array($metrics)) {
+                continue;
+            }
+            foreach ($metrics as $mk => $list) {
+                if (!in_array($mk, ['subs', 'views', 'inter'], true) || !is_array($list)) {
+                    continue;
+                }
+                $vals = array_values(array_filter(array_map(fn ($v) => trim((string) $v), $list), fn ($v) => $v !== ''));
+                if ($vals) {
+                    $notes[$plat][$mk] = $vals;
+                }
+            }
+        }
+
         $report->update([
             'summary' => $data['summary'] ?? null,
             'plan_next' => $data['plan_next'] ?? null,
-            'community' => $data['community'] ?? null,
-            'business' => $data['business'] ?? null,
+            'metric_notes' => $notes ?: null,
+            // пустые строки (ни картинки, ни подписи) не сохраняем
+            'community' => array_values(array_filter(
+                $data['community'] ?? [],
+                fn ($i) => !empty($i['image']) || trim($i['caption'] ?? '') !== ''
+            )) ?: null,
+            'business' => array_intersect_key($data['business'] ?? [], array_flip(['ad_clicks', 'ad_subs', 'ad_views', 'ad_budget'])) ?: null,
         ]);
 
         $report->tasks()->delete();
@@ -201,14 +234,16 @@ class ReportController extends Controller
         $report->contentItems()->delete();
 
         foreach ($data['content'] ?? [] as $i => $c) {
+            $isStory = ($c['kind'] ?? 'post') === 'story';
             $report->contentItems()->create([
                 'platform'  => $c['platform'],
                 'kind'      => $c['kind'] ?? 'post',
                 'title'     => $c['title'],
                 'views'     => $c['views'] ?? 0,
                 'reactions' => $c['reactions'] ?? 0,
-                'comments'  => $c['comments'] ?? 0,
-                'reposts'   => $c['reposts'] ?? 0,
+                // у сторис комментариев и репостов не бывает
+                'comments'  => $isStory ? 0 : ($c['comments'] ?? 0),
+                'reposts'   => $isStory ? 0 : ($c['reposts'] ?? 0),
                 'insight'   => $c['insight'] ?? null,
                 'image'     => $c['image'] ?? null,
                 'position'  => $i,

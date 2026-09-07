@@ -6,9 +6,10 @@ export default function Layout({ crumbs = [], children }) {
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    if (flash?.success) {
-      setToast(flash.success);
-      const t = setTimeout(() => setToast(null), 2600);
+    if (flash?.success || flash?.error) {
+      const err = !flash.success && !!flash.error;
+      setToast({ text: flash.success || flash.error, err });
+      const t = setTimeout(() => setToast(null), err ? 6000 : 2600);
       return () => clearTimeout(t);
     }
   }, [flash]);
@@ -34,10 +35,13 @@ export default function Layout({ crumbs = [], children }) {
               </React.Fragment>
             ))}
           </nav>
+          <nav className="crumbs" style={{ marginLeft: 18 }}>
+            <Link href="/settings">Настройки</Link>
+          </nav>
         </div>
       </header>
       <main className="page">{children}</main>
-      {toast && <div className="flash">{toast}</div>}
+      {toast && <div className={'flash' + (toast.err ? ' err' : '')}>{toast.text}</div>}
     </div>
   );
 }

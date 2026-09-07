@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Report extends Model
 {
-    protected $fillable = ['project_id','year','month','summary','plan_next','community','business'];
-    protected $casts = ['business' => 'array'];
+    protected $fillable = ['project_id','year','month','summary','plan_next','community','business','metric_notes'];
+    protected $casts = ['business' => 'array', 'community' => 'array', 'metric_notes' => 'array'];
     protected $appends = [
         'period_label',
         'totals',
@@ -76,9 +76,7 @@ class Report extends Model
             ->get()
             ->groupBy('platform');
 
-
         $result = [];
-
 
         foreach ($weeks as $platform => $items) {
 
@@ -101,6 +99,24 @@ class Report extends Model
             ];
         }
 
+        // у площадок без понедельной статистики берём готовые месячные итоги —
+        // иначе прошлые месяцы выглядят нулевыми и динамика завышается
+        $stats = $this->relationLoaded('platformStats') ? $this->platformStats : $this->platformStats()->get();
+        foreach ($stats as $ps) {
+            if (isset($result[$ps->platform])) {
+                continue;
+            }
+            $result[$ps->platform] = [
+                'subs' => (int)$ps->subs,
+                'views' => (int)$ps->views,
+                'reach' => (int)$ps->reach,
+                'inter' => (int)$ps->inter,
+                'leads' => (int)$ps->leads,
+                'posts' => (int)$ps->posts,
+                'stories' => (int)$ps->stories,
+                'er' => $ps->reach ? round($ps->inter / $ps->reach * 100, 1) : 0,
+            ];
+        }
 
         return $result;
     }

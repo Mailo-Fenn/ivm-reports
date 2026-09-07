@@ -18,6 +18,9 @@ export default function Show({ project, reports }) {
 		color: project.color,
 		client_period: project.client_period ?? '',
 		manager: project.manager ?? '',
+		vk_group: project.vk_group ?? '',
+		vk_token: '',
+		vk_token_remove: false,
 		is_active: project.is_active,
 	});
 
@@ -123,6 +126,57 @@ export default function Show({ project, reports }) {
 							/>
 						) : (
 							<span>{project.manager || '—'}</span>
+						)}
+					</div>
+
+					<div className="info-item">
+						<span className="card-title">Сообщество ВК</span>
+
+						{editing ? (
+							<input
+								className="inp"
+								placeholder="ID, короткое имя или ссылка"
+								value={edit.data.vk_group}
+								onChange={(e) =>
+									edit.setData('vk_group', e.target.value)
+								}
+							/>
+						) : (
+							<span>{project.vk_group || '—'}</span>
+						)}
+					</div>
+
+					<div className="info-item">
+						<span className="card-title">Ключ доступа сообщества ВК</span>
+
+						{editing ? (
+							<>
+								<input
+									className="inp"
+									type="password"
+									placeholder={project.has_vk_token ? 'Установлен — вставьте новый для замены' : 'Вставьте ключ (опционально)'}
+									value={edit.data.vk_token}
+									onChange={(e) =>
+										edit.setData('vk_token', e.target.value)
+									}
+								/>
+								{project.has_vk_token && (
+									<label className="switch-row" style={{ marginTop: 6, fontSize: 12 }}>
+										<input
+											type="checkbox"
+											checked={edit.data.vk_token_remove}
+											onChange={(e) =>
+												edit.setData('vk_token_remove', e.target.checked)
+											}
+										/>
+										Удалить сохранённый ключ
+									</label>
+								)}
+							</>
+						) : (
+							<span className={project.has_vk_token ? 'status on' : ''}>
+								{project.has_vk_token ? '● Установлен' : '—'}
+							</span>
 						)}
 					</div>
 
