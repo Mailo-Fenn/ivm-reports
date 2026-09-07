@@ -9,8 +9,8 @@ use Inertia\Inertia;
 
 class ReportController extends Controller
 {
-    private array $platforms = ['vk', 'ig', 'max'];
-    private array $names = ['vk' => 'ВКонтакте', 'ig' => 'Инстаграм', 'max' => 'Макс', 'tg' => 'Телеграм'];
+    private array $platforms = ['vk', 'ig', 'max', 'yt'];
+    private array $names = ['vk' => 'ВКонтакте', 'ig' => 'Инстаграм', 'max' => 'Макс', 'yt' => 'YouTube', 'tg' => 'Телеграм'];
 
     public function store(Request $request, Project $project)
     {
@@ -105,7 +105,7 @@ class ReportController extends Controller
 
             return [
                 $p => [
-                    'is_enabled' => true,
+                    'is_enabled' => $rep ? $rep->platformEnabled($p) : true,
                     'subs' => $stats['subs'] ?? 0,
                     'views' => $stats['views'] ?? 0,
                     'reach' => $stats['reach'] ?? 0,
@@ -119,7 +119,7 @@ class ReportController extends Controller
         });
 
         return Inertia::render('Reports/Show', [
-            'project' => ['id' => $report->project->id, 'name' => $report->project->name, 'color' => $report->project->color],
+            'project' => ['id' => $report->project->id, 'name' => $report->project->name, 'color' => $report->project->color, 'vk_group' => $report->project->vk_group, 'youtube_channel' => $report->project->youtube_channel],
             'report' => [
                 'id' => $report->id, 'year' => $report->year, 'month' => $report->month,
                 'period_label' => $report->period_label,
@@ -192,7 +192,7 @@ class ReportController extends Controller
             'weeks.*.leads' => 'nullable|integer|min:0',
             'weeks.*.posts' => 'nullable|integer|min:0',
             'weeks.*.stories' => 'nullable|integer|min:0',
-            'weeks.*.platform' => 'required|string|in:vk,ig,max',
+            'weeks.*.platform' => 'required|string|in:vk,ig,max,yt',
             'weeks.*.position' => 'required|integer|min:1|max:4',
             'tasks.*.type' => 'required|string|in:plan_fact,check',
         ]);
@@ -200,7 +200,7 @@ class ReportController extends Controller
         // выводы по площадкам: оставляем только известные площадки/метрики и непустые строки
         $notes = [];
         foreach (($data['metric_notes'] ?? []) as $plat => $metrics) {
-            if (!in_array($plat, ['vk', 'ig', 'max'], true) || !is_array($metrics)) {
+            if (!in_array($plat, $this->platforms, true) || !is_array($metrics)) {
                 continue;
             }
             foreach ($metrics as $mk => $list) {

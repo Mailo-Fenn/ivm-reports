@@ -21,6 +21,7 @@ export default function Show({ project, reports }) {
 		vk_group: project.vk_group ?? '',
 		vk_token: '',
 		vk_token_remove: false,
+		youtube_channel: project.youtube_channel ?? '',
 		is_active: project.is_active,
 	});
 
@@ -177,6 +178,23 @@ export default function Show({ project, reports }) {
 							<span className={project.has_vk_token ? 'status on' : ''}>
 								{project.has_vk_token ? '● Установлен' : '—'}
 							</span>
+						)}
+					</div>
+
+					<div className="info-item">
+						<span className="card-title">Канал YouTube</span>
+
+						{editing ? (
+							<input
+								className="inp"
+								placeholder="@handle, ID канала или ссылка"
+								value={edit.data.youtube_channel}
+								onChange={(e) =>
+									edit.setData('youtube_channel', e.target.value)
+								}
+							/>
+						) : (
+							<span>{project.youtube_channel || '—'}</span>
 						)}
 					</div>
 

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Report extends Model
 {
+    public const PLATFORMS = ['vk', 'ig', 'max', 'yt'];
+
     protected $fillable = ['project_id','year','month','summary','plan_next','community','business','metric_notes'];
     protected $casts = ['business' => 'array', 'community' => 'array', 'metric_notes' => 'array'];
     protected $appends = [
@@ -121,6 +123,22 @@ class Report extends Model
         return $result;
     }
 
+    // YouTube показываем только там, где он реально ведётся: у проекта указан канал
+    // либо по площадке уже есть цифры; остальные площадки включены всегда (как раньше)
+    public function platformEnabled(string $platform): bool
+    {
+        if ($platform !== 'yt') {
+            return true;
+        }
+        if ($this->project?->youtube_channel) {
+            return true;
+        }
+        $stats = $this->relationLoaded('platformStats') ? $this->platformStats : $this->platformStats()->get();
+        $ps = $stats->firstWhere('platform', 'yt');
+
+        return $ps ? ($ps->subs || $ps->views || $ps->inter || $ps->posts) : false;
+    }
+
     public function weeklyStatsByPlatform()
     {
         return $this->weeklyStats
@@ -129,7 +147,7 @@ class Report extends Model
 
     public function syncPlatformStats(): void
     {
-        foreach (['vk', 'ig', 'max'] as $platform) {
+        foreach (self::PLATFORMS as $platform) {
 
             $weekly = $this->weeklyStats()
                 ->where('platform', $platform)

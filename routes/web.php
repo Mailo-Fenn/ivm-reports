@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\GoogleOAuthController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportPptxController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\VkOAuthController;
 use App\Http\Controllers\VkSyncController;
+use App\Http\Controllers\YouTubeSyncController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('projects.index'));
@@ -23,12 +25,17 @@ Route::put('/reports/{report}', [ReportController::class, 'update'])->name('repo
 Route::delete('/reports/{report}', [ReportController::class, 'destroy'])->name('reports.destroy');
 Route::get('/reports/{report}/pptx', [ReportPptxController::class, 'download'])->name('reports.pptx');
 Route::post('/reports/{report}/vk-sync', [VkSyncController::class, 'sync'])->name('reports.vk-sync');
+Route::post('/reports/{report}/youtube-sync', [YouTubeSyncController::class, 'sync'])->name('reports.youtube-sync');
 
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 Route::post('/settings/vkid', [SettingsController::class, 'vkid'])->name('settings.vkid');
+Route::post('/settings/google', [SettingsController::class, 'google'])->name('settings.google');
 
 Route::get('/vk/connect', [VkOAuthController::class, 'connect'])->name('vk.connect');
 Route::get('/vk/callback', [VkOAuthController::class, 'callback'])->name('vk.callback');
+
+Route::get('/google/connect', [GoogleOAuthController::class, 'connect'])->name('google.connect');
+Route::get('/google/callback', [GoogleOAuthController::class, 'callback'])->name('google.callback');
 
 Route::post('/upload', [UploadController::class, 'store']);

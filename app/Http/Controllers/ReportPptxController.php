@@ -8,8 +8,8 @@ use Illuminate\Support\Str;
 
 class ReportPptxController extends Controller
 {
-    private array $platforms = ['vk', 'ig', 'max'];
-    private array $names = ['vk' => 'ВКонтакте', 'ig' => 'Инстаграм', 'max' => 'Макс'];
+    private array $platforms = ['vk', 'ig', 'max', 'yt'];
+    private array $names = ['vk' => 'ВКонтакте', 'ig' => 'Инстаграм', 'max' => 'Макс', 'yt' => 'YouTube'];
 
     public function download(Report $report)
     {
@@ -17,9 +17,12 @@ class ReportPptxController extends Controller
         $prev = $report->previousReport();
         $prev?->load('platformStats');
 
-        $map = function ($rep) {
+        // площадки, которых у клиента нет (YouTube без канала и цифр), в презентацию не попадают
+        $platforms = array_values(array_filter($this->platforms, fn ($p) => $report->platformEnabled($p)));
+
+        $map = function ($rep) use ($platforms) {
             $out = [];
-            foreach ($this->platforms as $p) {
+            foreach ($platforms as $p) {
                 $ps = $rep?->platformStats->firstWhere('platform', $p);
                 if ($ps) {
                     $out[$p] = ['subs' => $ps->subs, 'views' => $ps->views, 'reach' => $ps->reach,
@@ -37,9 +40,9 @@ class ReportPptxController extends Controller
                 ->orWhere(fn ($q2) => $q2->where('year', $report->year)->where('month', '<=', $report->month)))
             ->with('platformStats')->orderByDesc('year')->orderByDesc('month')->limit(6)->get()->reverse()->values();
 
-        $series = $history->map(function ($r) use ($months) {
+        $series = $history->map(function ($r) use ($months, $platforms) {
             $row = ['k' => $months[$r->month]];
-            foreach ($this->platforms as $p) {
+            foreach ($platforms as $p) {
                 $ps = $r->platformStats->firstWhere('platform', $p);
                 $row[$p] = [
                     'subs' => $ps?->subs ?? 0,

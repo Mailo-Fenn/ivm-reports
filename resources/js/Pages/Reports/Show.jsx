@@ -42,6 +42,7 @@ const KEYS = {
 	vk: ['subs', 'views', 'reach', 'inter', 'er', 'leads', 'posts', 'stories'],
 	ig: ['subs', 'views', 'reach', 'inter', 'er', 'posts', 'stories'],
 	max: ['subs', 'views', 'inter', 'er'],
+	yt: ['subs', 'views', 'inter', 'er', 'posts'],
 };
 
 const emptyStat = () => ({ subs: 0, views: 0, reach: 0, inter: 0, leads: 0, posts: 0, stories: 0 });
@@ -190,7 +191,14 @@ export default function Show({ project, report, reports, platformNames, current,
 	const [plan, setPlan] = useState(report.plan_next || '');
 	const [community, setCommunity] = useState(Array.isArray(report.community) ? report.community : []);
 	const [biz, setBiz] = useState(report.business || {});
-	const [wk, setWk] = useState(weeks || []);
+	// у включённой площадки без строк по неделям (YouTube в старых отчётах) создаём пустые недели,
+	// иначе в редакторе нечего заполнять; на сервер они уйдут при сохранении
+	const initWk = () => {
+		const base = weeks || [];
+		const missing = ALL_PLATFORMS.filter((p) => current[p]?.is_enabled && !base.some((w) => w.platform === p));
+		return [...base, ...missing.flatMap((p) => [1, 2, 3, 4].map((i) => ({ platform: p, position: i, label: `Неделя ${i}`, ...emptyStat() })))];
+	};
+	const [wk, setWk] = useState(initWk);
 	const [mn, setMn] = useState(report.metric_notes || {});
 
 	useEffect(() => {
@@ -217,6 +225,10 @@ export default function Show({ project, report, reports, platformNames, current,
 	);
 
 	const togglePlatform = (platform) => {
+		// у площадки, которой раньше не было в отчёте, нет строк по неделям — создаём пустые
+		if (!pf[platform]?.is_enabled && !wk.some((w) => w.platform === platform)) {
+			setWk([...wk, ...[1, 2, 3, 4].map((i) => ({ platform, position: i, label: `Неделя ${i}`, ...emptyStat() }))]);
+		}
 		setPf(prev => ({
 			...prev,
 			[platform]: {
@@ -229,7 +241,7 @@ export default function Show({ project, report, reports, platformNames, current,
 	useEffect(() => {
 		setPf(initPf()); setTk(tasks || []); setCt(content || []);
 		setSummary(report.summary || ''); setPlan(report.plan_next || '');
-		setCommunity(Array.isArray(report.community) ? report.community : []); setBiz(report.business || {}); setWk(weeks || []);
+		setCommunity(Array.isArray(report.community) ? report.community : []); setBiz(report.business || {}); setWk(initWk());
 		setMn(report.metric_notes || {});
 	}, [report.id]);
 
@@ -288,7 +300,7 @@ export default function Show({ project, report, reports, platformNames, current,
 	const cancel = () => {
 		setEditing(false); setPf(initPf()); setTk(tasks || []); setCt(content || []);
 		setSummary(report.summary || ''); setPlan(report.plan_next || '');
-		setCommunity(Array.isArray(report.community) ? report.community : []); setBiz(report.business || {}); setWk(weeks || []);
+		setCommunity(Array.isArray(report.community) ? report.community : []); setBiz(report.business || {}); setWk(initWk());
 		setMn(report.metric_notes || {});
 	};
 	const removeReport = () => { if (confirm('Удалить отчёт?')) router.delete(`/reports/${report.id}`); };
@@ -300,6 +312,15 @@ export default function Show({ project, report, reports, platformNames, current,
 		router.post(`/reports/${report.id}/vk-sync`, {}, {
 			preserveScroll: true,
 			onFinish: () => setPulling(false),
+		});
+	};
+	const [pullingYt, setPullingYt] = useState(false);
+	const pullYt = () => {
+		if (!confirm('Подтянуть данные из YouTube? Понедельные цифры YouTube (подписчики, просмотры, взаимодействия, видео) будут перезаписаны данными из API. Охваты останутся как есть.')) return;
+		setPullingYt(true);
+		router.post(`/reports/${report.id}/youtube-sync`, {}, {
+			preserveScroll: true,
+			onFinish: () => setPullingYt(false),
 		});
 	};
 
@@ -320,6 +341,9 @@ export default function Show({ project, report, reports, platformNames, current,
 						<>
 							<button className="btn btn-primary" onClick={() => setEditing(true)}><Pencil size={16} /> Редактировать</button>
 							<button className="btn" onClick={pullVk} disabled={pulling}><RefreshCw size={16} className={pulling ? 'spin' : undefined} /> {pulling ? 'Загрузка…' : 'Подтянуть из ВК'}</button>
+							{project.youtube_channel && (
+								<button className="btn" onClick={pullYt} disabled={pullingYt}><RefreshCw size={16} className={pullingYt ? 'spin' : undefined} /> {pullingYt ? 'Загрузка…' : 'Подтянуть из YouTube'}</button>
+							)}
 							<a className="btn btn-accent" href={`/reports/${report.id}/pptx`}><FileDown size={16} /> Скачать PowerPoint</a>
 							<button className="btn btn-danger" onClick={removeReport}><Trash2 size={16} /></button>
 						</>
@@ -834,9 +858,9 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 
 								<tbody>
 
-									{weekStats[platform].map((w) => (
+									{weekStats[platform].map((w, wi) => (
 
-										<tr key={w.id}>
+										<tr key={w.id ?? `new-${wi}`}>
 
 											<td>
 												<input
@@ -845,7 +869,7 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 													onChange={(e) =>
 														setWk(
 															wk.map(item =>
-																item.id === w.id
+																item === w
 																	? {
 																		...item,
 																		label: e.target.value
@@ -877,7 +901,7 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 														onChange={(e) =>
 															setWk(
 																wk.map(item =>
-																	item.id === w.id
+																	item === w
 																		? {
 																			...item,
 																			[key]: num(e)

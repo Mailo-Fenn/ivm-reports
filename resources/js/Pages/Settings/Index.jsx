@@ -1,13 +1,31 @@
 import React, { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { KeyRound, Link2, Save, Trash2 } from 'lucide-react';
+import { KeyRound, Link2, Save, Trash2, Youtube } from 'lucide-react';
 import Layout from '../../Layout';
 
-export default function Index({ vk, vkid }) {
+export default function Index({ vk, vkid, google }) {
 	const [token, setToken] = useState('');
 	const [saving, setSaving] = useState(false);
 	const [clientId, setClientId] = useState(vkid.client_id || '');
 	const [savingId, setSavingId] = useState(false);
+	const [gId, setGId] = useState(google?.client_id || '');
+	const [gSecret, setGSecret] = useState('');
+	const [savingG, setSavingG] = useState(false);
+
+	const saveGoogle = () => {
+		if (!gId.trim()) return;
+		setSavingG(true);
+		router.post('/settings/google', { client_id: gId, client_secret: gSecret }, {
+			onFinish: () => setSavingG(false),
+			onSuccess: () => setGSecret(''),
+		});
+	};
+
+	const disconnectGoogle = () => {
+		if (confirm('Отключить Google? Сохранённые токены будут удалены, подтягивание статистики YouTube перестанет работать.')) {
+			router.post('/settings/google', { disconnect: true });
+		}
+	};
 
 	const save = () => {
 		if (!token.trim()) return;
@@ -136,6 +154,66 @@ export default function Index({ vk, vkid }) {
 				<p style={{ fontSize: 12, color: 'var(--mut)', marginTop: 12 }}>
 					При сохранении токен проверяется запросом к VK API. Сообщество каждого клиента
 					указывается в настройках его проекта — поле «Сообщество ВК».
+				</p>
+			</div>
+
+			<div className="card" style={{ maxWidth: 640, marginTop: 18 }}>
+				<div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+					<Youtube size={16} /> Google — статистика YouTube
+				</div>
+
+				<p style={{ fontSize: 13, color: 'var(--mut)', margin: '10px 0 4px' }}>
+					Авторизация аккаунта агентства в Google. Статистика канала (просмотры, подписчики,
+					лайки, комментарии) доступна, только если этот аккаунт — владелец или менеджер
+					канала клиента; количество видео подтягивается для любого открытого канала.
+				</p>
+
+				<ol style={{ fontSize: 13, color: 'var(--mut)', margin: '10px 0 4px', paddingLeft: 18, lineHeight: 1.7 }}>
+					<li>В <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer">Google Cloud Console</a> создайте проект и включите API: <b>YouTube Data API v3</b> и <b>YouTube Analytics API</b>.</li>
+					<li>«APIs &amp; Services → OAuth consent screen»: тип External, добавьте себя в Test users, затем нажмите <b>Publish app</b> — иначе токен будет протухать каждые 7 дней.</li>
+					<li>«Credentials → Create credentials → OAuth client ID», тип Web application. Authorized redirect URI: <code style={{ userSelect: 'all' }}>{google?.redirect_uri}</code></li>
+					<li>Вставьте Client ID и Client Secret ниже, сохраните и нажмите «Подключить Google».</li>
+					<li>Попросите клиентов добавить этот аккаунт менеджером канала (YouTube Studio → Настройки → Разрешения) и укажите канал в настройках проекта.</li>
+				</ol>
+
+				<div style={{ margin: '14px 0 6px', fontSize: 13, fontWeight: 700 }}>
+					{google?.connected
+						? <span className="status on">● Подключено{google.account ? ` (${google.account})` : ''}</span>
+						: <span className="status off">● Не подключено</span>}
+				</div>
+
+				<div className="form-row" style={{ marginTop: 10, flexWrap: 'wrap' }}>
+					<input
+						className="inp"
+						style={{ flex: 1, minWidth: 220 }}
+						placeholder="Client ID (…apps.googleusercontent.com)"
+						value={gId}
+						onChange={(e) => setGId(e.target.value)}
+					/>
+					<input
+						className="inp"
+						type="password"
+						style={{ flex: 1, minWidth: 180 }}
+						placeholder={google?.has_secret ? 'Client Secret установлен — вставьте новый для замены' : 'Client Secret'}
+						value={gSecret}
+						onChange={(e) => setGSecret(e.target.value)}
+					/>
+					<button className="btn" onClick={saveGoogle} disabled={savingG || !gId.trim() || (!gSecret.trim() && !google?.has_secret)}>
+						<Save size={15} /> Сохранить
+					</button>
+					{google?.client_id && google?.has_secret && (
+						<a className="btn btn-primary" href="/google/connect">
+							<Link2 size={15} /> {google.connected ? 'Переподключить' : 'Подключить Google'}
+						</a>
+					)}
+					{google?.connected && (
+						<button className="btn btn-danger" onClick={disconnectGoogle}><Trash2 size={15} /></button>
+					)}
+				</div>
+
+				<p style={{ fontSize: 12, color: 'var(--mut)', marginTop: 12 }}>
+					Client Secret хранится в базе в зашифрованном виде и не показывается. Канал каждого
+					клиента указывается в настройках его проекта — поле «Канал YouTube».
 				</p>
 			</div>
 		</Layout>

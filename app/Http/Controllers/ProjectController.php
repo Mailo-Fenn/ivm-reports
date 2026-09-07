@@ -43,6 +43,7 @@ class ProjectController extends Controller
             'client_period' => 'nullable|string|max:255',
             'manager' => 'nullable|string|max:255',
             'vk_group' => 'nullable|string|max:255',
+            'youtube_channel' => 'nullable|string|max:255',
             'is_active' => 'boolean',
         ]);
 
@@ -53,6 +54,7 @@ class ProjectController extends Controller
             'client_period'   => $data['client_period'] ?? null,
             'manager'         => $data['manager'] ?? null,
             'vk_group'        => $data['vk_group'] ?? null,
+            'youtube_channel' => $data['youtube_channel'] ?? null,
             'is_active'       => $data['is_active'] ?? true,
         ]);
 
@@ -81,6 +83,7 @@ class ProjectController extends Controller
                 'manager' => $project->manager,
                 'vk_group' => $project->vk_group,
                 'has_vk_token' => (bool) $project->vk_token,
+                'youtube_channel' => $project->youtube_channel,
                 'is_active' => $project->is_active,
             ],
             'reports' => $reports,
@@ -97,6 +100,7 @@ class ProjectController extends Controller
             'vk_group'      => 'nullable|string|max:255',
             'vk_token'        => 'nullable|string|max:1024',
             'vk_token_remove' => 'boolean',
+            'youtube_channel' => 'nullable|string|max:255',
             'is_active'     => 'boolean',
         ]);
 
@@ -106,6 +110,7 @@ class ProjectController extends Controller
             'client_period' => $data['client_period'] ?? null,
             'manager'       => $data['manager'] ?? null,
             'vk_group'      => $data['vk_group'] ?? null,
+            'youtube_channel' => trim($data['youtube_channel'] ?? '') ?: null,
             'is_active'     => $data['is_active'] ?? false,
         ]);
 

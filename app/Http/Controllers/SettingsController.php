@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Services\GoogleOAuth;
 use App\Services\VkApi;
 use App\Services\VkApiException;
 use App\Services\VkOAuth;
@@ -26,7 +27,40 @@ class SettingsController extends Controller
                 'user_id' => Setting::get('vkid_user_id'),
                 'redirect_uri' => VkOAuth::redirectUri(),
             ],
+            'google' => [
+                'client_id' => Setting::get('google_client_id'),
+                'has_secret' => (bool) Setting::get('google_client_secret'),
+                'connected' => GoogleOAuth::connected(),
+                'account' => Setting::get('google_account'),
+                'redirect_uri' => GoogleOAuth::redirectUri(),
+            ],
         ]);
+    }
+
+    public function google(Request $request)
+    {
+        if ($request->boolean('disconnect')) {
+            GoogleOAuth::disconnect();
+
+            return back()->with('success', 'Google отключён — токены удалены');
+        }
+
+        $data = $request->validate([
+            'client_id' => 'required|string|max:255',
+            'client_secret' => 'nullable|string|max:255',
+        ]);
+
+        Setting::set('google_client_id', trim($data['client_id']));
+        // секрет обратно не показываем, поэтому пустое поле означает «оставить прежний»
+        if (trim($data['client_secret'] ?? '') !== '') {
+            Setting::set('google_client_secret', trim($data['client_secret']));
+        }
+
+        if (!Setting::get('google_client_secret')) {
+            return back()->with('error', 'Укажите Client Secret приложения Google');
+        }
+
+        return back()->with('success', 'Данные приложения Google сохранены — теперь нажмите «Подключить Google»');
     }
 
     public function vkid(Request $request)
