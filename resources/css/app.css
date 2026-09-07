@@ -341,3 +341,13 @@ button { font-family: inherit; cursor: pointer; }
 .platrorm-stat-wrapper {
     margin-bottom: 40px;
 }
+
+/* ---- вход ---- */
+.crumbs button { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+.crumbs button:hover { color: var(--wine); }
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.login-card { width: 100%; max-width: 380px; }
+.login-field { display: block; margin-bottom: 12px; }
+.login-field span { display: block; font-size: 12px; font-weight: 700; color: var(--mut); margin-bottom: 6px; }
+.login-field .inp { width: 100%; }
+.login-err { background: rgba(165,48,59,.12); color: #A5303B; border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }

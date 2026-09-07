@@ -37,6 +37,8 @@ export default function Layout({ crumbs = [], children }) {
           </nav>
           <nav className="crumbs" style={{ marginLeft: 18 }}>
             <Link href="/settings">Настройки</Link>
+            <span className="sep">/</span>
+            <Link href="/logout" method="post" as="button" type="button">Выйти</Link>
           </nav>
         </div>
       </header>
