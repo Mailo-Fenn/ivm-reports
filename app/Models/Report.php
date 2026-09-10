@@ -30,6 +30,15 @@ class Report extends Model
     public function tasks(): HasMany { return $this->hasMany(ReportTask::class)->orderBy('position'); }
     public function contentItems(): HasMany { return $this->hasMany(ContentItem::class)->orderBy('position'); }
 
+    // «Подписчики» в неделях — общее число на конец недели, поэтому итог месяца —
+    // последняя заполненная неделя, а не сумма (сумма имела бы смысл только для прироста)
+    public static function subsFromWeeks($weeks): int
+    {
+        $last = collect($weeks)->sortByDesc('position')->first(fn ($w) => (int) $w->subs !== 0);
+
+        return (int) ($last?->subs ?? 0);
+    }
+
     public function getPeriodLabelAttribute(): string
     {
         $m = ['','Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
@@ -61,7 +70,7 @@ class Report extends Model
 
 
         return [
-            'subs' => $sum('subs'),
+            'subs' => self::subsFromWeeks($w),
             'views' => $sum('views'),
             'reach' => $reach,
             'inter' => $inter,
@@ -90,7 +99,7 @@ class Report extends Model
 
 
             $result[$platform] = [
-                'subs' => (int)$items->sum('subs'),
+                'subs' => self::subsFromWeeks($items),
                 'views' => (int)$items->sum('views'),
                 'reach' => (int)$reach,
                 'inter' => (int)$inter,
@@ -160,7 +169,7 @@ class Report extends Model
             $this->platformStats()->updateOrCreate(
                 ['platform' => $platform],
                 [
-                    'subs' => $weekly->sum('subs'),
+                    'subs' => self::subsFromWeeks($weekly),
                     'views'   => $weekly->sum('views'),
                     'reach'   => $weekly->sum('reach'),
                     'inter' => $weekly->sum('inter'),

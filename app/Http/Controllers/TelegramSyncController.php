@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Models\TelegramSubscriberSnapshot;
+use App\Services\SubscriberTotals;
 use App\Services\TelegramException;
 use App\Services\TelegramStats;
 use Carbon\Carbon;
@@ -46,13 +47,15 @@ class TelegramSyncController extends Controller
             $weeks[$i]['posts']++;
         }
 
-        // прирост подписчиков: встроенная статистика канала (≥500 подписчиков, права админа),
-        // иначе — ежедневные снимки команды telegram:snapshot-subscribers
-        [$subsByWeek, $subsSource] = $this->subscribers($report, $data['followers_by_day'] ?? null, $start, $end, $weekOf);
+        // подписчики — общее число на конец недели: из встроенной статистики канала (≥500 подписчиков,
+        // права админа) через число сейчас минус прирост после недели, иначе — по ежедневным снимкам
+        [$subsByWeek, $subsSource] = $this->subscribers(
+            $report, $data['followers_by_day'] ?? null, (int) ($data['channel']['subscribers'] ?? 0), $start, $end
+        );
 
         // охват Telegram не отдаёт, заявки и сторис к каналам не относятся — эти поля не трогаем
         foreach ($weeks as $i => $w) {
-            if ($subsByWeek !== null) {
+            if ($subsByWeek !== null && $subsByWeek[$i] !== null) {
                 $w['subs'] = $subsByWeek[$i];
             }
             $report->weeklyStats()->updateOrCreate(
@@ -66,7 +69,7 @@ class TelegramSyncController extends Controller
         $title = $data['channel']['title'] ?? $project->telegram_channel;
         $msg = "Данные Telegram подтянуты: «{$title}», {$report->period_label}";
         if ($subsByWeek === null) {
-            $msg .= '. Подписчики не обновлены: у канала нет встроенной статистики (нужно ≥500 подписчиков и права администратора), а ежедневных снимков за этот месяц ещё нет — цифры остались как были';
+            $msg .= '. Подписчики не обновлены: встроенная статистика канала недоступна или не покрывает этот месяц (нужно ≥500 подписчиков и права администратора), а ежедневных снимков за него нет — цифры остались как были';
         } elseif ($subsSource === 'snapshots') {
             $msg .= ' (подписчики — по ежедневным снимкам)';
         }
@@ -74,54 +77,52 @@ class TelegramSyncController extends Controller
         return back()->with('success', $msg);
     }
 
-    // [array|null по неделям, источник]
-    private function subscribers(Report $report, ?array $byDay, Carbon $start, Carbon $end, callable $weekOf): array
+    // [array|null по неделям (число на конец недели или null), источник]
+    private function subscribers(Report $report, ?array $byDay, int $current, Carbon $start, Carbon $end): array
     {
-        $weeks = array_fill_keys(range(1, 4), 0);
-
+        // 1) встроенная статистика: график покрывает ограниченный период, поэтому недели раньше его начала не трогаем
         if ($byDay) {
-            $inMonth = array_filter($byDay, fn ($v, $d) => $d >= $start->toDateString() && $d <= $end->toDateString(), ARRAY_FILTER_USE_BOTH);
-            if ($inMonth) {
-                foreach ($inMonth as $date => $net) {
-                    $weeks[$weekOf(strtotime($date))] += (int) $net;
-                }
-
+            $weeks = SubscriberTotals::byWeek($current, $byDay, $start, $end, Carbon::parse(min(array_keys($byDay)), self::TZ));
+            if ($weeks && array_filter($weeks, fn ($v) => $v !== null)) {
                 return [$weeks, 'stats'];
             }
         }
 
-        // снимки: прирост за неделю = снимок на конец недели − снимок на конец предыдущей недели
+        // 2) ежедневные снимки: число на конец недели = последний снимок внутри этой недели
         $snaps = TelegramSubscriberSnapshot::where('project_id', $report->project_id)
             // в базе дата хранится с временем 00:00:00, поэтому границы задаём датой-временем
-            ->whereBetween('taken_on', [$start->copy()->subDay()->startOfDay()->toDateTimeString(), $end->toDateTimeString()])
+            ->whereBetween('taken_on', [$start->copy()->startOfDay()->toDateTimeString(), $end->toDateTimeString()])
             ->orderBy('taken_on')
-            ->pluck('subscribers', 'taken_on')
-            ->mapWithKeys(fn ($v, $k) => [Carbon::parse($k)->toDateString() => (int) $v])
+            ->get()
+            ->mapWithKeys(fn ($s) => [$s->taken_on->toDateString() => (int) $s->subscribers])
             ->all();
-        if (count($snaps) < 2) {
-            return [null, null];
-        }
 
-        $valueOn = function (string $date) use ($snaps) {
-            // ближайший снимок не позже даты
-            $best = null;
-            foreach ($snaps as $d => $v) {
-                if ($d <= $date) {
-                    $best = $v;
+        $today = Carbon::now(self::TZ)->startOfDay();
+        $weeks = [];
+        $any = false;
+        foreach (range(1, 4) as $i) {
+            $weekStart = $start->copy()->startOfDay()->addDays(($i - 1) * 7);
+            $weekEnd = $i === 4 ? $end->copy()->startOfDay() : $weekStart->copy()->addDays(6);
+            if ($weekStart->gt($today)) {
+                $weeks[$i] = null;
+                continue;
+            }
+            // текущая неделя — число на сейчас
+            if ($weekEnd->gte($today)) {
+                $weeks[$i] = $current;
+                $any = true;
+                continue;
+            }
+            $value = null;
+            foreach ($snaps as $date => $n) {
+                if ($date >= $weekStart->toDateString() && $date <= $weekEnd->toDateString()) {
+                    $value = $n;
                 }
             }
-
-            return $best;
-        };
-
-        $prev = $valueOn($start->copy()->subDay()->toDateString()) ?? reset($snaps);
-        foreach (range(1, 4) as $i) {
-            $weekEnd = $i === 4 ? $end->copy() : $start->copy()->addDays($i * 7 - 1);
-            $cur = $valueOn($weekEnd->toDateString()) ?? $prev;
-            $weeks[$i] = $cur - $prev;
-            $prev = $cur;
+            $weeks[$i] = $value;
+            $any = $any || $value !== null;
         }
 
-        return [$weeks, 'snapshots'];
+        return $any ? [$weeks, 'snapshots'] : [null, null];
     }
 }

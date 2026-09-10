@@ -56,13 +56,21 @@ const calcPlatformStatsFromWeeks = (weeks) => {
 			result[w.platform] = emptyStat();
 		}
 
-		result[w.platform].subs += Number(w.subs) || 0;
 		result[w.platform].views += Number(w.views) || 0;
 		result[w.platform].reach += Number(w.reach) || 0;
 		result[w.platform].inter += Number(w.inter) || 0;
 		result[w.platform].leads += Number(w.leads) || 0;
 		result[w.platform].posts += Number(w.posts) || 0;
 		result[w.platform].stories += Number(w.stories) || 0;
+	});
+
+	// подписчики — общее число на конец недели: берём последнюю заполненную неделю, а не сумму
+	Object.keys(result).forEach((p) => {
+		const last = weeks
+			.filter((w) => w.platform === p && Number(w.subs))
+			.sort((a, b) => (a.position || 0) - (b.position || 0))
+			.pop();
+		result[p].subs = last ? Number(last.subs) : 0;
 	});
 
 	return result;
@@ -870,7 +878,7 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 								<thead>
 									<tr>
 										<th>Неделя</th>
-										<th>Подписчики</th>
+										<th title="Общее число подписчиков на конец недели; в итог месяца идёт последняя заполненная неделя">Подписчики (всего)</th>
 										<th>Просмотры</th>
 										<th>Охваты</th>
 										<th>Взаим.</th>

@@ -7,6 +7,7 @@ use App\Models\Report;
 use App\Services\InstagramApi;
 use App\Services\InstagramApiException;
 use App\Services\InstagramOAuth;
+use App\Services\SubscriberTotals;
 use Carbon\Carbon;
 
 class InstagramSyncController extends Controller
@@ -74,20 +75,27 @@ class InstagramSyncController extends Controller
             unset($w);
         }
 
-        // новые подписчики: Meta отдаёт их только за последние 30 дней, поэтому берём то, что есть
+        // подписчики — общее число на конец недели: текущее число минус новые подписчики после неё.
+        // Meta отдаёт новых подписчиков только за последние 30 дней (и без отписок), поэтому
+        // восстановить удаётся лишь недели, закончившиеся не раньше чем 30 дней назад
         $subsByWeek = null;
         try {
-            $days = $ig->newFollowersByDay($start->timestamp, $end->timestamp);
-            if ($days) {
-                $subsByWeek = array_fill_keys(range(1, 4), 0);
-                foreach ($days as $date => $n) {
-                    $subsByWeek[$this->weekOf(strtotime($date))] += $n;
-                }
+            $current = (int) ($ig->me()['followers_count'] ?? 0);
+            $now = Carbon::now(self::TZ);
+            $dataFrom = $now->copy()->startOfDay()->subDays(29)->max($start->copy()->startOfDay());
+            try {
+                $days = $ig->newFollowersByDay($dataFrom->timestamp, $now->timestamp);
+            } catch (\Throwable) {
+                // без динамики можно заполнить только текущую неделю числом на сейчас
+                $days = [];
+                $dataFrom = $now->copy()->startOfDay();
             }
+            $subsByWeek = SubscriberTotals::byWeek($current, $days, $start, $end, $dataFrom);
         } catch (\Throwable) {
-            // метрика недоступна — подписчиков не трогаем
+            // профиль недоступен — подписчиков не трогаем
         }
-        if ($subsByWeek === null) {
+        if ($subsByWeek === null || !array_filter($subsByWeek, fn ($v) => $v !== null)) {
+            $subsByWeek = null;
             $missing[] = 'подписчики';
         }
 
@@ -107,7 +115,7 @@ class InstagramSyncController extends Controller
 
         // заявки (leads) Instagram API не отдаёт — поле не трогаем
         foreach ($weeks as $i => $w) {
-            if ($subsByWeek !== null) {
+            if ($subsByWeek !== null && $subsByWeek[$i] !== null) {
                 $w['subs'] = $subsByWeek[$i];
             }
             if ($storiesByWeek !== null) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Models\Setting;
+use App\Services\SubscriberTotals;
 use App\Services\VkApi;
 use App\Services\VkApiException;
 use App\Services\VkOAuth;
@@ -46,7 +47,8 @@ class VkSyncController extends Controller
         $statsAvailable = true;
         $days = [];
         try {
-            $days = $vk->stats($group['id'], $start->timestamp, $end->timestamp);
+            // до сегодня, а не до конца месяца: по приросту после месяца восстанавливаем число подписчиков на его конец
+            $days = $vk->stats($group['id'], $start->timestamp, max($end->timestamp, time()));
         } catch (VkApiException $e) {
             if (!in_array($e->getCode(), [27, 1051])) {
                 return back()->with('error', 'Ошибка VK API: ' . $e->getMessage());
@@ -59,19 +61,29 @@ class VkSyncController extends Controller
         // недели отчёта: дни 1–7, 8–14, 15–21, 22 — конец месяца
         $weekOf = fn (int $ts) => min(4, intdiv(Carbon::createFromTimestamp($ts, self::TZ)->day - 1, 7) + 1);
 
-        $weeks = array_fill_keys(range(1, 4), ['subs' => 0, 'views' => 0, 'reach' => 0, 'inter' => 0, 'posts' => 0]);
+        $weeks = array_fill_keys(range(1, 4), ['views' => 0, 'reach' => 0, 'inter' => 0, 'posts' => 0]);
 
+        $netByDay = [];
         foreach ($days as $d) {
             if (!isset($d['period_from'])) {
                 continue;
             }
-            $i = $weekOf((int) $d['period_from']);
+            $ts = (int) $d['period_from'];
             $a = $d['activity'] ?? [];
-            $weeks[$i]['subs'] += ($a['subscribed'] ?? 0) - ($a['unsubscribed'] ?? 0);
+            $netByDay[Carbon::createFromTimestamp($ts, self::TZ)->toDateString()] = ($a['subscribed'] ?? 0) - ($a['unsubscribed'] ?? 0);
+            if ($ts > $end->timestamp) {
+                continue;
+            }
+            $i = $weekOf($ts);
             $weeks[$i]['inter'] += ($a['likes'] ?? 0) + ($a['comments'] ?? 0) + ($a['copies'] ?? 0);
             $weeks[$i]['views'] += $d['visitors']['views'] ?? 0;
             $weeks[$i]['reach'] += $d['reach']['reach'] ?? 0;
         }
+
+        // подписчики — общее число на конец каждой недели (сейчас минус прирост после неё)
+        $subsByWeek = $statsAvailable
+            ? SubscriberTotals::byWeek((int) ($group['members_count'] ?? 0), $netByDay, $start, $end)
+            : null;
 
         foreach ($posts as $p) {
             $weeks[$weekOf((int) $p['date'])]['posts']++;
@@ -80,6 +92,9 @@ class VkSyncController extends Controller
         // leads и stories из API недоступны — эти поля не трогаем;
         // без stats.get обновляем только посты, сохраняя введённые вручную цифры
         foreach ($weeks as $i => $w) {
+            if ($subsByWeek !== null && $subsByWeek[$i] !== null) {
+                $w['subs'] = $subsByWeek[$i];
+            }
             $report->weeklyStats()->updateOrCreate(
                 ['platform' => 'vk', 'position' => $i],
                 ($statsAvailable ? $w : ['posts' => $w['posts']]) + ['label' => "Неделя $i"]
