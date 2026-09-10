@@ -45,6 +45,7 @@ class ProjectController extends Controller
             'manager' => 'nullable|string|max:255',
             'vk_group' => 'nullable|string|max:255',
             'youtube_channel' => 'nullable|string|max:255',
+            'telegram_channel' => 'nullable|string|max:255',
             'is_active' => 'boolean',
         ]);
 
@@ -56,6 +57,7 @@ class ProjectController extends Controller
             'manager'         => $data['manager'] ?? null,
             'vk_group'        => $data['vk_group'] ?? null,
             'youtube_channel' => $data['youtube_channel'] ?? null,
+            'telegram_channel' => trim($data['telegram_channel'] ?? '') ?: null,
             'is_active'       => $data['is_active'] ?? true,
         ]);
 
@@ -85,6 +87,7 @@ class ProjectController extends Controller
                 'vk_group' => $project->vk_group,
                 'has_vk_token' => (bool) $project->vk_token,
                 'youtube_channel' => $project->youtube_channel,
+                'telegram_channel' => $project->telegram_channel,
                 'instagram_username' => $project->instagram_username,
                 'instagram_connected' => (bool) $project->instagram_token,
                 'instagram_expires_at' => $project->instagram_token_expires_at?->format('d.m.Y'),
@@ -106,6 +109,7 @@ class ProjectController extends Controller
             'vk_token'        => 'nullable|string|max:1024',
             'vk_token_remove' => 'boolean',
             'youtube_channel' => 'nullable|string|max:255',
+            'telegram_channel' => 'nullable|string|max:255',
             'is_active'     => 'boolean',
         ]);
 
@@ -116,6 +120,7 @@ class ProjectController extends Controller
             'manager'       => $data['manager'] ?? null,
             'vk_group'      => $data['vk_group'] ?? null,
             'youtube_channel' => trim($data['youtube_channel'] ?? '') ?: null,
+            'telegram_channel' => trim($data['telegram_channel'] ?? '') ?: null,
             'is_active'     => $data['is_active'] ?? false,
         ]);
 

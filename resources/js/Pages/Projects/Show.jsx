@@ -22,6 +22,7 @@ export default function Show({ project, reports }) {
 		vk_token: '',
 		vk_token_remove: false,
 		youtube_channel: project.youtube_channel ?? '',
+		telegram_channel: project.telegram_channel ?? '',
 		is_active: project.is_active,
 	});
 
@@ -195,6 +196,23 @@ export default function Show({ project, reports }) {
 							/>
 						) : (
 							<span>{project.youtube_channel || '—'}</span>
+						)}
+					</div>
+
+					<div className="info-item">
+						<span className="card-title">Канал Telegram</span>
+
+						{editing ? (
+							<input
+								className="inp"
+								placeholder="@имя канала или ссылка t.me"
+								value={edit.data.telegram_channel}
+								onChange={(e) =>
+									edit.setData('telegram_channel', e.target.value)
+								}
+							/>
+						) : (
+							<span>{project.telegram_channel || '—'}</span>
 						)}
 					</div>
 

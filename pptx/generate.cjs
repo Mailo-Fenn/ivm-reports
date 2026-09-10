@@ -38,7 +38,7 @@ const plural = (n, forms) => {
   return forms[2];
 };
 const KEYS = Object.keys(D.current || {}).filter((k) => D.current[k]);
-const PLAT_SHORT = { vk: "ВК", ig: "инстаграм", max: "Макс", yt: "YouTube" };
+const PLAT_SHORT = { vk: "ВК", ig: "инстаграм", max: "Макс", yt: "YouTube", tg: "Телеграм" };
 const monthOf = (label) => (label || "").split(" ")[0]; // «Июнь 2026» → «Июнь»
 
 function slide() {

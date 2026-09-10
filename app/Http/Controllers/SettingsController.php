@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use App\Services\GoogleOAuth;
 use App\Services\InstagramOAuth;
+use App\Services\TelegramStats;
 use App\Services\VkApi;
 use App\Services\VkApiException;
 use App\Services\VkOAuth;
@@ -13,7 +14,7 @@ use Inertia\Inertia;
 
 class SettingsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $token = Setting::get('vk_token');
 
@@ -40,7 +41,28 @@ class SettingsController extends Controller
                 'has_secret' => (bool) Setting::get('instagram_app_secret'),
                 'redirect_uri' => InstagramOAuth::redirectUri(),
             ],
+            'telegram' => TelegramAuthController::state($request),
         ]);
+    }
+
+    public function telegram(Request $request)
+    {
+        $data = $request->validate([
+            'api_id' => 'required|digits_between:1,12',
+            'api_hash' => 'nullable|string|max:64',
+        ]);
+
+        Setting::set('telegram_api_id', $data['api_id']);
+        // hash обратно не показываем, поэтому пустое поле означает «оставить прежний»
+        if (trim($data['api_hash'] ?? '') !== '') {
+            Setting::set('telegram_api_hash', trim($data['api_hash']));
+        }
+
+        if (!TelegramStats::configured()) {
+            return back()->with('error', 'Укажите api_hash приложения Telegram');
+        }
+
+        return back()->with('success', 'Данные приложения Telegram сохранены — теперь войдите в аккаунт агентства');
     }
 
     public function instagram(Request $request)

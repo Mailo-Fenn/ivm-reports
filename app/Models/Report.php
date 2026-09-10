@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Report extends Model
 {
-    public const PLATFORMS = ['vk', 'ig', 'max', 'yt'];
+    public const PLATFORMS = ['vk', 'ig', 'max', 'yt', 'tg'];
+
+    // площадки, которые показываем только при заполненном канале у проекта (или при наличии цифр)
+    private const OPTIONAL_PLATFORMS = ['yt' => 'youtube_channel', 'tg' => 'telegram_channel'];
 
     protected $fillable = ['project_id','year','month','summary','plan_next','community','business','metric_notes'];
     protected $casts = ['business' => 'array', 'community' => 'array', 'metric_notes' => 'array'];
@@ -123,18 +126,19 @@ class Report extends Model
         return $result;
     }
 
-    // YouTube показываем только там, где он реально ведётся: у проекта указан канал
+    // YouTube и Telegram показываем только там, где они реально ведутся: у проекта указан канал
     // либо по площадке уже есть цифры; остальные площадки включены всегда (как раньше)
     public function platformEnabled(string $platform): bool
     {
-        if ($platform !== 'yt') {
+        $field = self::OPTIONAL_PLATFORMS[$platform] ?? null;
+        if (!$field) {
             return true;
         }
-        if ($this->project?->youtube_channel) {
+        if ($this->project?->{$field}) {
             return true;
         }
         $stats = $this->relationLoaded('platformStats') ? $this->platformStats : $this->platformStats()->get();
-        $ps = $stats->firstWhere('platform', 'yt');
+        $ps = $stats->firstWhere('platform', $platform);
 
         return $ps ? ($ps->subs || $ps->views || $ps->inter || $ps->posts) : false;
     }

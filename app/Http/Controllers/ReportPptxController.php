@@ -8,8 +8,8 @@ use Illuminate\Support\Str;
 
 class ReportPptxController extends Controller
 {
-    private array $platforms = ['vk', 'ig', 'max', 'yt'];
-    private array $names = ['vk' => 'ВКонтакте', 'ig' => 'Инстаграм', 'max' => 'Макс', 'yt' => 'YouTube'];
+    private array $platforms = ['vk', 'ig', 'max', 'yt', 'tg'];
+    private array $names = ['vk' => 'ВКонтакте', 'ig' => 'Инстаграм', 'max' => 'Макс', 'yt' => 'YouTube', 'tg' => 'Телеграм'];
 
     public function download(Report $report)
     {

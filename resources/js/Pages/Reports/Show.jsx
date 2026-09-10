@@ -43,6 +43,7 @@ const KEYS = {
 	ig: ['subs', 'views', 'reach', 'inter', 'er', 'posts', 'stories'],
 	max: ['subs', 'views', 'inter', 'er'],
 	yt: ['subs', 'views', 'inter', 'er', 'posts'],
+	tg: ['subs', 'views', 'inter', 'er', 'posts'],
 };
 
 const emptyStat = () => ({ subs: 0, views: 0, reach: 0, inter: 0, leads: 0, posts: 0, stories: 0 });
@@ -323,6 +324,15 @@ export default function Show({ project, report, reports, platformNames, current,
 			onFinish: () => setPullingIg(false),
 		});
 	};
+	const [pullingTg, setPullingTg] = useState(false);
+	const pullTg = () => {
+		if (!confirm('Подтянуть данные из Telegram? Понедельные цифры Telegram (просмотры, взаимодействия, посты, а при наличии данных — подписчики) будут перезаписаны данными из канала.')) return;
+		setPullingTg(true);
+		router.post(`/reports/${report.id}/telegram-sync`, {}, {
+			preserveScroll: true,
+			onFinish: () => setPullingTg(false),
+		});
+	};
 	const [pullingYt, setPullingYt] = useState(false);
 	const pullYt = () => {
 		if (!confirm('Подтянуть данные из YouTube? Понедельные цифры YouTube (подписчики, просмотры, взаимодействия, видео) будут перезаписаны данными из API. Охваты останутся как есть.')) return;
@@ -355,6 +365,9 @@ export default function Show({ project, report, reports, platformNames, current,
 							)}
 							{project.youtube_channel && (
 								<button className="btn" onClick={pullYt} disabled={pullingYt}><RefreshCw size={16} className={pullingYt ? 'spin' : undefined} /> {pullingYt ? 'Загрузка…' : 'Подтянуть из YouTube'}</button>
+							)}
+							{project.telegram_channel && (
+								<button className="btn" onClick={pullTg} disabled={pullingTg}><RefreshCw size={16} className={pullingTg ? 'spin' : undefined} /> {pullingTg ? 'Загрузка…' : 'Подтянуть из Telegram'}</button>
 							)}
 							<a className="btn btn-accent" href={`/reports/${report.id}/pptx`}><FileDown size={16} /> Скачать PowerPoint</a>
 							<button className="btn btn-danger" onClick={removeReport}><Trash2 size={16} /></button>

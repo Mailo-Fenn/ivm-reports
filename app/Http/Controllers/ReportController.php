@@ -9,7 +9,7 @@ use Inertia\Inertia;
 
 class ReportController extends Controller
 {
-    private array $platforms = ['vk', 'ig', 'max', 'yt'];
+    private array $platforms = ['vk', 'ig', 'max', 'yt', 'tg'];
     private array $names = ['vk' => 'ВКонтакте', 'ig' => 'Инстаграм', 'max' => 'Макс', 'yt' => 'YouTube', 'tg' => 'Телеграм'];
 
     public function store(Request $request, Project $project)
@@ -119,7 +119,7 @@ class ReportController extends Controller
         });
 
         return Inertia::render('Reports/Show', [
-            'project' => ['id' => $report->project->id, 'name' => $report->project->name, 'color' => $report->project->color, 'vk_group' => $report->project->vk_group, 'youtube_channel' => $report->project->youtube_channel, 'instagram_connected' => (bool) $report->project->instagram_token],
+            'project' => ['id' => $report->project->id, 'name' => $report->project->name, 'color' => $report->project->color, 'vk_group' => $report->project->vk_group, 'youtube_channel' => $report->project->youtube_channel, 'instagram_connected' => (bool) $report->project->instagram_token, 'telegram_channel' => $report->project->telegram_channel],
             'report' => [
                 'id' => $report->id, 'year' => $report->year, 'month' => $report->month,
                 'period_label' => $report->period_label,
@@ -192,7 +192,7 @@ class ReportController extends Controller
             'weeks.*.leads' => 'nullable|integer|min:0',
             'weeks.*.posts' => 'nullable|integer|min:0',
             'weeks.*.stories' => 'nullable|integer|min:0',
-            'weeks.*.platform' => 'required|string|in:vk,ig,max,yt',
+            'weeks.*.platform' => 'required|string|in:vk,ig,max,yt,tg',
             'weeks.*.position' => 'required|integer|min:1|max:4',
             'tasks.*.type' => 'required|string|in:plan_fact,check',
         ]);

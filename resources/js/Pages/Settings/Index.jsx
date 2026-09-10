@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { Instagram, KeyRound, Link2, Save, Trash2, Youtube } from 'lucide-react';
+import { Instagram, KeyRound, Link2, Save, Send, Trash2, Youtube } from 'lucide-react';
 import Layout from '../../Layout';
 
-export default function Index({ vk, vkid, google, instagram }) {
+export default function Index({ vk, vkid, google, instagram, telegram }) {
 	const [token, setToken] = useState('');
 	const [saving, setSaving] = useState(false);
 	const [clientId, setClientId] = useState(vkid.client_id || '');
@@ -15,6 +15,27 @@ export default function Index({ vk, vkid, google, instagram }) {
 	const [igId, setIgId] = useState(instagram?.app_id || '');
 	const [igSecret, setIgSecret] = useState('');
 	const [savingIg, setSavingIg] = useState(false);
+
+	const [tgApiId, setTgApiId] = useState(telegram?.api_id || '');
+	const [tgApiHash, setTgApiHash] = useState('');
+	const [tgPhone, setTgPhone] = useState(telegram?.phone || '');
+	const [tgCode, setTgCode] = useState('');
+	const [tgPassword, setTgPassword] = useState('');
+	const [tgBusy, setTgBusy] = useState(false);
+
+	const tgPost = (url, data, after) => {
+		setTgBusy(true);
+		router.post(url, data, { preserveScroll: true, onFinish: () => setTgBusy(false), onSuccess: after });
+	};
+	const saveTelegramApp = () => tgPost('/settings/telegram', { api_id: tgApiId, api_hash: tgApiHash }, () => setTgApiHash(''));
+	const tgStart = () => tgPost('/telegram/login/start', { phone: tgPhone });
+	const tgSendCode = () => tgPost('/telegram/login/code', { code: tgCode }, () => setTgCode(''));
+	const tgSendPassword = () => tgPost('/telegram/login/password', { password: tgPassword }, () => setTgPassword(''));
+	const tgLogout = () => {
+		if (confirm('Отключить аккаунт Telegram? Сессия на сервере будет удалена, подтягивание статистики каналов перестанет работать.')) {
+			tgPost('/telegram/logout', {});
+		}
+	};
 
 	const saveInstagram = () => {
 		if (!igId.trim()) return;
@@ -282,6 +303,119 @@ export default function Index({ vk, vkid, google, instagram }) {
 						<Save size={15} /> Сохранить
 					</button>
 				</div>
+			</div>
+
+			<div className="card" style={{ maxWidth: 640, marginTop: 18 }}>
+				<div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+					<Send size={16} /> Telegram — статистика каналов
+				</div>
+
+				<p style={{ fontSize: 13, color: 'var(--mut)', margin: '10px 0 4px' }}>
+					Портал работает от имени обычного аккаунта Telegram агентства через клиентский API.
+					Посты с просмотрами, реакциями, пересылками и комментариями доступны для любого
+					открытого канала. Динамика подписчиков берётся из встроенной статистики канала
+					(нужно не меньше 500 подписчиков и права администратора у этого аккаунта), а для
+					остальных каналов считается по ежедневным снимкам, которые портал делает сам.
+				</p>
+
+				<ol style={{ fontSize: 13, color: 'var(--mut)', margin: '10px 0 4px', paddingLeft: 18, lineHeight: 1.7 }}>
+					<li>Войдите на <a href="https://my.telegram.org/apps" target="_blank" rel="noreferrer">my.telegram.org/apps</a> под номером аккаунта агентства и создайте приложение (App title и Short name — любые, platform — Other).</li>
+					<li>Скопируйте <b>api_id</b> и <b>api_hash</b>, вставьте ниже и сохраните.</li>
+					<li>Введите номер телефона аккаунта, получите код в Telegram и завершите вход. При включённой двухэтапной аутентификации понадобится облачный пароль.</li>
+					<li>Канал каждого клиента укажите в настройках его проекта — поле «Канал Telegram». Для приватных каналов аккаунт должен состоять в канале, а для статистики подписчиков — быть администратором.</li>
+				</ol>
+
+				<div style={{ margin: '14px 0 6px', fontSize: 13, fontWeight: 700 }}>
+					{telegram?.connected
+						? <span className="status on">● Подключено ({telegram.user})</span>
+						: <span className="status off">● Аккаунт не подключён</span>}
+				</div>
+
+				<div className="form-row" style={{ marginTop: 10, flexWrap: 'wrap' }}>
+					<input
+						className="inp"
+						style={{ width: 140 }}
+						placeholder="api_id"
+						value={tgApiId}
+						onChange={(e) => setTgApiId(e.target.value)}
+					/>
+					<input
+						className="inp"
+						type="password"
+						style={{ flex: 1, minWidth: 220 }}
+						placeholder={telegram?.has_hash ? 'api_hash установлен — вставьте новый для замены' : 'api_hash'}
+						value={tgApiHash}
+						onChange={(e) => setTgApiHash(e.target.value)}
+					/>
+					<button className="btn" onClick={saveTelegramApp} disabled={tgBusy || !tgApiId.trim() || (!tgApiHash.trim() && !telegram?.has_hash)}>
+						<Save size={15} /> Сохранить
+					</button>
+				</div>
+
+				{telegram?.configured && !telegram?.connected && (
+					<div style={{ marginTop: 14 }}>
+						{!telegram.step && (
+							<div className="form-row">
+								<input
+									className="inp"
+									style={{ flex: 1, minWidth: 200 }}
+									placeholder="Телефон, например +375291234567"
+									value={tgPhone}
+									onChange={(e) => setTgPhone(e.target.value)}
+								/>
+								<button className="btn btn-primary" onClick={tgStart} disabled={tgBusy || !tgPhone.trim()}>
+									<Send size={15} /> {tgBusy ? 'Отправка…' : 'Получить код'}
+								</button>
+							</div>
+						)}
+						{telegram.step === 'code' && (
+							<div className="form-row">
+								<span style={{ fontSize: 13, color: 'var(--mut)' }}>Код отправлен на {telegram.phone}</span>
+								<input
+									className="inp"
+									style={{ width: 140 }}
+									placeholder="Код из Telegram"
+									autoFocus
+									value={tgCode}
+									onChange={(e) => setTgCode(e.target.value)}
+								/>
+								<button className="btn btn-primary" onClick={tgSendCode} disabled={tgBusy || !tgCode.trim()}>
+									{tgBusy ? 'Проверка…' : 'Войти'}
+								</button>
+								<button className="btn" onClick={() => tgPost('/telegram/login/cancel', {})} disabled={tgBusy}>Отмена</button>
+							</div>
+						)}
+						{telegram.step === 'password' && (
+							<div className="form-row">
+								<input
+									className="inp"
+									type="password"
+									style={{ flex: 1, minWidth: 200 }}
+									placeholder="Облачный пароль"
+									autoFocus
+									value={tgPassword}
+									onChange={(e) => setTgPassword(e.target.value)}
+								/>
+								<button className="btn btn-primary" onClick={tgSendPassword} disabled={tgBusy || !tgPassword.trim()}>
+									{tgBusy ? 'Проверка…' : 'Войти'}
+								</button>
+								<button className="btn" onClick={() => tgPost('/telegram/login/cancel', {})} disabled={tgBusy}>Отмена</button>
+							</div>
+						)}
+					</div>
+				)}
+
+				{telegram?.connected && (
+					<div className="form-row" style={{ marginTop: 12 }}>
+						<button className="btn btn-danger" onClick={tgLogout} disabled={tgBusy}><Trash2 size={15} /> Отключить аккаунт</button>
+					</div>
+				)}
+
+				<p style={{ fontSize: 12, color: 'var(--mut)', marginTop: 12 }}>
+					На сервере нужны Python 3 и библиотека telethon (см. инструкцию по установке),
+					а также cron с <code>php artisan schedule:run</code> для ежедневных снимков подписчиков.
+					Охват Telegram не отдаёт — поле остаётся ручным.
+				</p>
 			</div>
 		</Layout>
 	);

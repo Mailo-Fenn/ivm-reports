@@ -8,6 +8,8 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportPptxController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\TelegramAuthController;
+use App\Http\Controllers\TelegramSyncController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\VkOAuthController;
 use App\Http\Controllers\VkSyncController;
@@ -37,12 +39,19 @@ Route::get('/reports/{report}/pptx', [ReportPptxController::class, 'download'])-
 Route::post('/reports/{report}/vk-sync', [VkSyncController::class, 'sync'])->name('reports.vk-sync');
 Route::post('/reports/{report}/youtube-sync', [YouTubeSyncController::class, 'sync'])->name('reports.youtube-sync');
 Route::post('/reports/{report}/instagram-sync', [InstagramSyncController::class, 'sync'])->name('reports.instagram-sync');
+Route::post('/reports/{report}/telegram-sync', [TelegramSyncController::class, 'sync'])->name('reports.telegram-sync');
 
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 Route::post('/settings/vkid', [SettingsController::class, 'vkid'])->name('settings.vkid');
 Route::post('/settings/google', [SettingsController::class, 'google'])->name('settings.google');
 Route::post('/settings/instagram', [SettingsController::class, 'instagram'])->name('settings.instagram');
+Route::post('/settings/telegram', [SettingsController::class, 'telegram'])->name('settings.telegram');
+Route::post('/telegram/login/start', [TelegramAuthController::class, 'start'])->middleware('throttle:10,1')->name('telegram.login.start');
+Route::post('/telegram/login/code', [TelegramAuthController::class, 'code'])->middleware('throttle:10,1')->name('telegram.login.code');
+Route::post('/telegram/login/password', [TelegramAuthController::class, 'password'])->middleware('throttle:10,1')->name('telegram.login.password');
+Route::post('/telegram/login/cancel', [TelegramAuthController::class, 'cancel'])->name('telegram.login.cancel');
+Route::post('/telegram/logout', [TelegramAuthController::class, 'logout'])->name('telegram.logout');
 
 Route::get('/vk/connect', [VkOAuthController::class, 'connect'])->name('vk.connect');
 Route::get('/vk/callback', [VkOAuthController::class, 'callback'])->name('vk.callback');
