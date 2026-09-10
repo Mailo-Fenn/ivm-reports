@@ -119,7 +119,7 @@ class ReportController extends Controller
         });
 
         return Inertia::render('Reports/Show', [
-            'project' => ['id' => $report->project->id, 'name' => $report->project->name, 'color' => $report->project->color, 'vk_group' => $report->project->vk_group, 'youtube_channel' => $report->project->youtube_channel],
+            'project' => ['id' => $report->project->id, 'name' => $report->project->name, 'color' => $report->project->color, 'vk_group' => $report->project->vk_group, 'youtube_channel' => $report->project->youtube_channel, 'instagram_connected' => (bool) $report->project->instagram_token],
             'report' => [
                 'id' => $report->id, 'year' => $report->year, 'month' => $report->month,
                 'period_label' => $report->period_label,

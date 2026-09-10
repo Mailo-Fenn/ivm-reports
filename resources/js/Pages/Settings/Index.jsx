@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { KeyRound, Link2, Save, Trash2, Youtube } from 'lucide-react';
+import { Instagram, KeyRound, Link2, Save, Trash2, Youtube } from 'lucide-react';
 import Layout from '../../Layout';
 
-export default function Index({ vk, vkid, google }) {
+export default function Index({ vk, vkid, google, instagram }) {
 	const [token, setToken] = useState('');
 	const [saving, setSaving] = useState(false);
 	const [clientId, setClientId] = useState(vkid.client_id || '');
@@ -11,6 +11,19 @@ export default function Index({ vk, vkid, google }) {
 	const [gId, setGId] = useState(google?.client_id || '');
 	const [gSecret, setGSecret] = useState('');
 	const [savingG, setSavingG] = useState(false);
+
+	const [igId, setIgId] = useState(instagram?.app_id || '');
+	const [igSecret, setIgSecret] = useState('');
+	const [savingIg, setSavingIg] = useState(false);
+
+	const saveInstagram = () => {
+		if (!igId.trim()) return;
+		setSavingIg(true);
+		router.post('/settings/instagram', { app_id: igId, app_secret: igSecret }, {
+			onFinish: () => setSavingIg(false),
+			onSuccess: () => setIgSecret(''),
+		});
+	};
 
 	const saveGoogle = () => {
 		if (!gId.trim()) return;
@@ -215,6 +228,60 @@ export default function Index({ vk, vkid, google }) {
 					Client Secret хранится в базе в зашифрованном виде и не показывается. Канал каждого
 					клиента указывается в настройках его проекта — поле «Канал YouTube».
 				</p>
+			</div>
+
+			<div className="card" style={{ maxWidth: 640, marginTop: 18 }}>
+				<div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+					<Instagram size={16} /> Meta — статистика Instagram
+				</div>
+
+				<p style={{ fontSize: 13, color: 'var(--mut)', margin: '10px 0 4px' }}>
+					Instagram выдаёт токен конкретному аккаунту, поэтому подключение делается отдельно
+					для каждого проекта: кнопка «Подключить Instagram» в настройках проекта открывает вход
+					в Instagram, куда нужно войти под аккаунтом клиента. Аккаунт должен быть
+					бизнес- или авторским (Профиль → Настройки → Тип аккаунта). Здесь указываются
+					только данные приложения Meta.
+				</p>
+
+				<ol style={{ fontSize: 13, color: 'var(--mut)', margin: '10px 0 4px', paddingLeft: 18, lineHeight: 1.7 }}>
+					<li>В <a href="https://developers.facebook.com/apps/" target="_blank" rel="noreferrer">Meta for Developers</a> создайте приложение: вариант <b>Other → Business</b>.</li>
+					<li>В панели приложения добавьте продукт <b>Instagram</b> и откройте <b>API setup with Instagram login</b>.</li>
+					<li>В разделе <b>Business login settings</b> добавьте OAuth redirect URI: <code style={{ userSelect: 'all' }}>{instagram?.redirect_uri}</code></li>
+					<li>Там же скопируйте <b>Instagram app ID</b> и <b>Instagram app secret</b> (не путать с общими App ID и Secret приложения) и вставьте ниже.</li>
+					<li>Пока приложение не прошло проверку Meta, подключать можно только аккаунты-тестировщики: <b>App roles → Roles → Add people → Instagram Tester</b>, укажите аккаунт клиента. Клиент принимает приглашение в Instagram: Настройки → Сайт и приложения → Приглашения тестировщиков.</li>
+				</ol>
+
+				<p style={{ fontSize: 12, color: 'var(--mut)', margin: '6px 0 4px' }}>
+					Сторис в API доступны только 24 часа, поэтому портал собирает их по расписанию.
+					На сервере должен быть настроен cron с командой <code>php artisan schedule:run</code>.
+				</p>
+
+				<div style={{ margin: '14px 0 6px', fontSize: 13, fontWeight: 700 }}>
+					{instagram?.app_id && instagram?.has_secret
+						? <span className="status on">● Приложение настроено</span>
+						: <span className="status off">● Приложение не настроено</span>}
+				</div>
+
+				<div className="form-row" style={{ marginTop: 10, flexWrap: 'wrap' }}>
+					<input
+						className="inp"
+						style={{ flex: 1, minWidth: 200 }}
+						placeholder="Instagram app ID"
+						value={igId}
+						onChange={(e) => setIgId(e.target.value)}
+					/>
+					<input
+						className="inp"
+						type="password"
+						style={{ flex: 1, minWidth: 200 }}
+						placeholder={instagram?.has_secret ? 'App secret установлен — вставьте новый для замены' : 'Instagram app secret'}
+						value={igSecret}
+						onChange={(e) => setIgSecret(e.target.value)}
+					/>
+					<button className="btn btn-primary" onClick={saveInstagram} disabled={savingIg || !igId.trim() || (!igSecret.trim() && !instagram?.has_secret)}>
+						<Save size={15} /> Сохранить
+					</button>
+				</div>
 			</div>
 		</Layout>
 	);

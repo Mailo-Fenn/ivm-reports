@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use App\Services\GoogleOAuth;
+use App\Services\InstagramOAuth;
 use App\Services\VkApi;
 use App\Services\VkApiException;
 use App\Services\VkOAuth;
@@ -34,7 +35,32 @@ class SettingsController extends Controller
                 'account' => Setting::get('google_account'),
                 'redirect_uri' => GoogleOAuth::redirectUri(),
             ],
+            'instagram' => [
+                'app_id' => Setting::get('instagram_app_id'),
+                'has_secret' => (bool) Setting::get('instagram_app_secret'),
+                'redirect_uri' => InstagramOAuth::redirectUri(),
+            ],
         ]);
+    }
+
+    public function instagram(Request $request)
+    {
+        $data = $request->validate([
+            'app_id' => 'required|string|max:255',
+            'app_secret' => 'nullable|string|max:255',
+        ]);
+
+        Setting::set('instagram_app_id', trim($data['app_id']));
+        // секрет обратно не показываем, поэтому пустое поле означает «оставить прежний»
+        if (trim($data['app_secret'] ?? '') !== '') {
+            Setting::set('instagram_app_secret', trim($data['app_secret']));
+        }
+
+        if (!Setting::get('instagram_app_secret')) {
+            return back()->with('error', 'Укажите App Secret приложения Meta');
+        }
+
+        return back()->with('success', 'Данные приложения Meta сохранены — теперь подключайте Instagram в настройках проектов');
     }
 
     public function google(Request $request)

@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GoogleOAuthController;
+use App\Http\Controllers\InstagramOAuthController;
+use App\Http\Controllers\InstagramSyncController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportPptxController;
@@ -34,17 +36,23 @@ Route::delete('/reports/{report}', [ReportController::class, 'destroy'])->name('
 Route::get('/reports/{report}/pptx', [ReportPptxController::class, 'download'])->name('reports.pptx');
 Route::post('/reports/{report}/vk-sync', [VkSyncController::class, 'sync'])->name('reports.vk-sync');
 Route::post('/reports/{report}/youtube-sync', [YouTubeSyncController::class, 'sync'])->name('reports.youtube-sync');
+Route::post('/reports/{report}/instagram-sync', [InstagramSyncController::class, 'sync'])->name('reports.instagram-sync');
 
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 Route::post('/settings/vkid', [SettingsController::class, 'vkid'])->name('settings.vkid');
 Route::post('/settings/google', [SettingsController::class, 'google'])->name('settings.google');
+Route::post('/settings/instagram', [SettingsController::class, 'instagram'])->name('settings.instagram');
 
 Route::get('/vk/connect', [VkOAuthController::class, 'connect'])->name('vk.connect');
 Route::get('/vk/callback', [VkOAuthController::class, 'callback'])->name('vk.callback');
 
 Route::get('/google/connect', [GoogleOAuthController::class, 'connect'])->name('google.connect');
 Route::get('/google/callback', [GoogleOAuthController::class, 'callback'])->name('google.callback');
+
+Route::get('/projects/{project}/instagram/connect', [InstagramOAuthController::class, 'connect'])->name('instagram.connect');
+Route::post('/projects/{project}/instagram/disconnect', [InstagramOAuthController::class, 'disconnect'])->name('instagram.disconnect');
+Route::get('/instagram/callback', [InstagramOAuthController::class, 'callback'])->name('instagram.callback');
 
 Route::post('/upload', [UploadController::class, 'store']);
 

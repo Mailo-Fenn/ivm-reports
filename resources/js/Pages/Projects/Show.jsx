@@ -199,6 +199,36 @@ export default function Show({ project, reports }) {
 					</div>
 
 					<div className="info-item">
+						<span className="card-title">Instagram</span>
+
+						{project.instagram_connected ? (
+							<>
+								<span className="status on">● @{project.instagram_username}</span>
+								<span style={{ fontSize: 12, color: 'var(--mut)' }}>токен до {project.instagram_expires_at}, продлевается автоматически</span>
+								<div className="form-row" style={{ marginTop: 6, gap: 6 }}>
+									<a className="btn btn-mini" href={`/projects/${project.id}/instagram/connect`}>Переподключить</a>
+									<button
+										className="btn btn-mini btn-danger"
+										onClick={() => { if (confirm('Отключить Instagram от проекта?')) router.post(`/projects/${project.id}/instagram/disconnect`); }}
+									>
+										Отключить
+									</button>
+								</div>
+							</>
+						) : project.instagram_configured ? (
+							<>
+								<span>—</span>
+								<a className="btn btn-mini" style={{ marginTop: 6, alignSelf: 'flex-start' }} href={`/projects/${project.id}/instagram/connect`}>
+									Подключить Instagram
+								</a>
+								<span style={{ fontSize: 12, color: 'var(--mut)' }}>откроется вход в Instagram — войдите в аккаунт клиента</span>
+							</>
+						) : (
+							<span style={{ fontSize: 12, color: 'var(--mut)' }}>сначала укажите App ID и App Secret приложения Meta в Настройках</span>
+						)}
+					</div>
+
+					<div className="info-item">
 						<span className="card-title">Статус</span>
 
 						{editing ? (

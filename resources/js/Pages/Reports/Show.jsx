@@ -314,6 +314,15 @@ export default function Show({ project, report, reports, platformNames, current,
 			onFinish: () => setPulling(false),
 		});
 	};
+	const [pullingIg, setPullingIg] = useState(false);
+	const pullIg = () => {
+		if (!confirm('Подтянуть данные из Instagram? Понедельные цифры Instagram (охваты, просмотры, взаимодействия, публикации, а при наличии данных — подписчики и сторис) будут перезаписаны данными из API.')) return;
+		setPullingIg(true);
+		router.post(`/reports/${report.id}/instagram-sync`, {}, {
+			preserveScroll: true,
+			onFinish: () => setPullingIg(false),
+		});
+	};
 	const [pullingYt, setPullingYt] = useState(false);
 	const pullYt = () => {
 		if (!confirm('Подтянуть данные из YouTube? Понедельные цифры YouTube (подписчики, просмотры, взаимодействия, видео) будут перезаписаны данными из API. Охваты останутся как есть.')) return;
@@ -341,6 +350,9 @@ export default function Show({ project, report, reports, platformNames, current,
 						<>
 							<button className="btn btn-primary" onClick={() => setEditing(true)}><Pencil size={16} /> Редактировать</button>
 							<button className="btn" onClick={pullVk} disabled={pulling}><RefreshCw size={16} className={pulling ? 'spin' : undefined} /> {pulling ? 'Загрузка…' : 'Подтянуть из ВК'}</button>
+							{project.instagram_connected && (
+								<button className="btn" onClick={pullIg} disabled={pullingIg}><RefreshCw size={16} className={pullingIg ? 'spin' : undefined} /> {pullingIg ? 'Загрузка…' : 'Подтянуть из Instagram'}</button>
+							)}
 							{project.youtube_channel && (
 								<button className="btn" onClick={pullYt} disabled={pullingYt}><RefreshCw size={16} className={pullingYt ? 'spin' : undefined} /> {pullingYt ? 'Загрузка…' : 'Подтянуть из YouTube'}</button>
 							)}

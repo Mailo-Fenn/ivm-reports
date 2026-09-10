@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Services\InstagramOAuth;
 use App\Services\VkApi;
 use App\Services\VkApiException;
 use Illuminate\Http\Request;
@@ -84,6 +85,10 @@ class ProjectController extends Controller
                 'vk_group' => $project->vk_group,
                 'has_vk_token' => (bool) $project->vk_token,
                 'youtube_channel' => $project->youtube_channel,
+                'instagram_username' => $project->instagram_username,
+                'instagram_connected' => (bool) $project->instagram_token,
+                'instagram_expires_at' => $project->instagram_token_expires_at?->format('d.m.Y'),
+                'instagram_configured' => InstagramOAuth::configured(),
                 'is_active' => $project->is_active,
             ],
             'reports' => $reports,
