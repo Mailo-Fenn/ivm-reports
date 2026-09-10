@@ -69,8 +69,11 @@ class Report extends Model
         $inter = $sum('inter');
 
 
+        // база подписчиков по всем площадкам — сумма последних заполненных недель каждой площадки
+        $subs = (int) $w->groupBy('platform')->sum(fn ($items) => self::subsFromWeeks($items));
+
         return [
-            'subs' => self::subsFromWeeks($w),
+            'subs' => $subs,
             'views' => $sum('views'),
             'reach' => $reach,
             'inter' => $inter,

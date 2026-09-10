@@ -310,7 +310,7 @@ export default function Show({ project, reports }) {
 							<div className="card-meta">Понедельный отчёт</div>
 							<div className="card-stats">
 								<div className="card-stat">
-									<b>{fSigned(r.totals.subscribers)}</b>
+									<b>{fInt(r.totals.subs)}</b>
 									<span>Подписчики</span>
 								</div>
 								<div className="card-stat">
