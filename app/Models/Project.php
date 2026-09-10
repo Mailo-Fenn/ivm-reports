@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Project extends Model
 {
-    protected $fillable = ['name', 'slug', 'color', 'description', 'client_period', 'manager', 'vk_group', 'vk_token', 'youtube_channel', 'instagram_username', 'instagram_user_id', 'instagram_token', 'instagram_token_expires_at', 'telegram_channel', 'is_active'];
+    protected $fillable = ['name', 'slug', 'color', 'description', 'client_period', 'manager', 'vk_group', 'vk_token', 'youtube_channel', 'instagram_username', 'instagram_user_id', 'instagram_token', 'instagram_token_expires_at', 'telegram_channel', 'tariff', 'is_active'];
 
     protected $casts = [
         'is_active' => 'boolean',

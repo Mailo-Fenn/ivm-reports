@@ -46,6 +46,7 @@ class ProjectController extends Controller
             'vk_group' => 'nullable|string|max:255',
             'youtube_channel' => 'nullable|string|max:255',
             'telegram_channel' => 'nullable|string|max:255',
+            'tariff' => 'nullable|in:'.implode(',', array_keys(config('tariffs.list'))),
             'is_active' => 'boolean',
         ]);
 
@@ -55,6 +56,7 @@ class ProjectController extends Controller
             'color' => $data['color'] ?? '#6C4CF0',
             'client_period'   => $data['client_period'] ?? null,
             'manager'         => $data['manager'] ?? null,
+            'tariff'          => $data['tariff'] ?? config('tariffs.default'),
             'vk_group'        => $data['vk_group'] ?? null,
             'youtube_channel' => $data['youtube_channel'] ?? null,
             'telegram_channel' => trim($data['telegram_channel'] ?? '') ?: null,
@@ -84,6 +86,7 @@ class ProjectController extends Controller
                 'color' => $project->color,
                 'client_period' => $project->client_period,
                 'manager' => $project->manager,
+                'tariff' => $project->tariff ?: config('tariffs.default'),
                 'vk_group' => $project->vk_group,
                 'has_vk_token' => (bool) $project->vk_token,
                 'youtube_channel' => $project->youtube_channel,
@@ -95,6 +98,7 @@ class ProjectController extends Controller
                 'is_active' => $project->is_active,
             ],
             'reports' => $reports,
+            'tariffs' => collect(config('tariffs.list'))->map(fn ($t) => $t['name']),
         ]);
     }
 
@@ -110,6 +114,7 @@ class ProjectController extends Controller
             'vk_token_remove' => 'boolean',
             'youtube_channel' => 'nullable|string|max:255',
             'telegram_channel' => 'nullable|string|max:255',
+            'tariff'        => 'nullable|in:'.implode(',', array_keys(config('tariffs.list'))),
             'is_active'     => 'boolean',
         ]);
 
@@ -118,6 +123,7 @@ class ProjectController extends Controller
             'color'         => $data['color'] ?? '#6C4CF0',
             'client_period' => $data['client_period'] ?? null,
             'manager'       => $data['manager'] ?? null,
+            'tariff'        => $data['tariff'] ?? config('tariffs.default'),
             'vk_group'      => $data['vk_group'] ?? null,
             'youtube_channel' => trim($data['youtube_channel'] ?? '') ?: null,
             'telegram_channel' => trim($data['telegram_channel'] ?? '') ?: null,

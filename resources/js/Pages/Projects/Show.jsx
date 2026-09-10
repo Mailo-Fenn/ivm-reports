@@ -7,7 +7,7 @@ import { fInt, fSigned, fPct } from '../../lib/ui';
 const MONTHS = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
 	'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
-export default function Show({ project, reports }) {
+export default function Show({ project, reports, tariffs = {} }) {
 	const now = new Date();
 	const [open, setOpen] = useState(false);
 
@@ -18,6 +18,7 @@ export default function Show({ project, reports }) {
 		color: project.color,
 		client_period: project.client_period ?? '',
 		manager: project.manager ?? '',
+		tariff: project.tariff ?? 'start',
 		vk_group: project.vk_group ?? '',
 		vk_token: '',
 		vk_token_remove: false,
@@ -112,6 +113,25 @@ export default function Show({ project, reports }) {
 							/>
 						) : (
 							<span>{project.client_period || '—'}</span>
+						)}
+					</div>
+
+					<div className="info-item">
+						<span className="card-title">Тариф</span>
+
+						{editing ? (
+							<select
+								className="inp"
+								value={edit.data.tariff}
+								onChange={(e) => edit.setData('tariff', e.target.value)}
+							>
+								{Object.entries(tariffs).map(([key, name]) => <option key={key} value={key}>{name}</option>)}
+							</select>
+						) : (
+							<span>{tariffs[project.tariff] || '—'}</span>
+						)}
+						{editing && (
+							<span style={{ fontSize: 12, color: 'var(--mut)' }}>задаёт план постов, сторис и рекламы и чек-лист в новых отчётах</span>
 						)}
 					</div>
 

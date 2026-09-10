@@ -34,11 +34,15 @@ class ReportController extends Controller
             }
         }
         
-        // default tasks
+        // задачи «план / факт» и чек-лист — по тарифу проекта (config/tariffs.php)
         if ($report->tasks()->count() === 0) {
-            $seed = [['Контент-план', '1', '1'], ['Посты', '12', ''], ['Сторис', '20', ''], ['Reels', '4', '']];
-            foreach ($seed as $i => $t) {
-                $report->tasks()->create(['title' => $t[0], 'plan' => $t[1], 'fact' => $t[2], 'status' => 'в работе', 'type' => 'plan_fact', 'type' => $t['type'] ?? 'plan_fact', 'position' => $i]);
+            $tariff = config('tariffs.list.'.$project->tariff) ?: config('tariffs.list.'.config('tariffs.default'));
+            $pos = 0;
+            foreach ($tariff['plan_fact'] ?? [] as [$title, $plan]) {
+                $report->tasks()->create(['title' => $title, 'plan' => $plan, 'fact' => '', 'status' => 'в работе', 'type' => 'plan_fact', 'position' => $pos++]);
+            }
+            foreach ($tariff['checklist'] ?? [] as $title) {
+                $report->tasks()->create(['title' => $title, 'plan' => '', 'fact' => '', 'status' => 'в работе', 'type' => 'check', 'position' => $pos++]);
             }
         }
 
