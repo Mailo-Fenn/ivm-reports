@@ -212,7 +212,11 @@ function Panel({ eyebrow, title, note, children, light }) {
 	);
 }
 
-export default function Show({ project, report, reports, platformNames, current, previous, series, tasks, content, weeks }) {
+export default function Show({ project, report, reports, platformNames, current, previous, series, tasks, content, weeks, share }) {
+	// страница открыта по ссылке для клиента: только просмотр, ссылки ведут на /share/…
+	const ro = !!share;
+	const reportHref = (id) => (ro ? `/share/${share.token}/reports/${id}` : `/reports/${id}`);
+	const projectHref = ro ? `/share/${share.token}` : `/projects/${project.id}`;
 	const ALL_PLATFORMS = Object.keys(current);
 	const [view, setView] = useState('overview');
 	const [editing, setEditing] = useState(false);
@@ -381,12 +385,13 @@ export default function Show({ project, report, reports, platformNames, current,
 	};
 
 	return (
-		<Layout crumbs={[{ label: project.name, href: `/projects/${project.id}` }, editing ? { label: report.period_label, href: `/reports/${report.id}` } : { label: report.period_label }, ...(editing ? [{ label: 'Редактирование' }] : [])]}>
+		<Layout crumbs={[{ label: project.name, href: projectHref }, editing ? { label: report.period_label, href: `/reports/${report.id}` } : { label: report.period_label }, ...(editing ? [{ label: 'Редактирование' }] : [])]}>
 			<div className="page-head">
 				<div>
 					<div className="eyebrow">Отчёт по SMM · {project.name}</div>
 					<h1 className="page-title">{view === 'overview' ? 'Обзор' : platformNames[view]} · {report.period_label}</h1>
 				</div>
+				{!ro && (
 				<div className="page-actions">
 					{editing ? (
 						<>
@@ -411,6 +416,7 @@ export default function Show({ project, report, reports, platformNames, current,
 						</>
 					)}
 				</div>
+				)}
 			</div>
 
 			<div className="tabs">
@@ -434,7 +440,7 @@ export default function Show({ project, report, reports, platformNames, current,
 					) : (
 						<Link
 							key={m.id}
-							href={`/reports/${m.id}`}
+							href={reportHref(m.id)}
 							className="tab"
 						>
 							{m.period_label}
@@ -447,7 +453,7 @@ export default function Show({ project, report, reports, platformNames, current,
 				? <Overview {...{ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks: tk, biz, summary, plan, community, setView, PLIST }} />
 				: <PlatformView pid={view} {...{ platformNames, stats, previous, liveSeries, content: ct, PLIST, periodLabel: report.period_label }} />}
 
-			{editing && <Editor {...{ platformNames, PLIST, togglePlatform, current, previous, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, mn, setMn, num }} />}
+			{editing && !ro && <Editor {...{ platformNames, PLIST, togglePlatform, current, previous, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, mn, setMn, num }} />}
 
 			<footer className="foot"><span>Истина в маркетинге · istinavm.ru</span><span>{project.name} · {report.period_label}</span></footer>
 		</Layout>

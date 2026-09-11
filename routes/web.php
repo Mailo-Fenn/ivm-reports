@@ -8,6 +8,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportPptxController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ShareController;
 use App\Http\Controllers\TelegramAuthController;
 use App\Http\Controllers\TelegramSyncController;
 use App\Http\Controllers\UploadController;
@@ -21,6 +22,10 @@ Route::get('/login', [AuthController::class, 'show'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('login.attempt');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// ссылка для клиента: просмотр проекта и отчётов без входа
+Route::get('/share/{token}', [ShareController::class, 'project'])->name('share.project');
+Route::get('/share/{token}/reports/{report}', [ShareController::class, 'report'])->name('share.report');
+
 Route::middleware(PortalAuth::class)->group(function () {
 
 Route::get('/', fn () => redirect()->route('projects.index'));
@@ -30,6 +35,8 @@ Route::post('/projects', [ProjectController::class, 'store'])->name('projects.st
 Route::put('/projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
 Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
 Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
+Route::post('/projects/{project}/share', [ProjectController::class, 'share'])->name('projects.share');
+Route::delete('/projects/{project}/share', [ProjectController::class, 'unshare'])->name('projects.unshare');
 
 Route::post('/projects/{project}/reports', [ReportController::class, 'store'])->name('reports.store');
 Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show');

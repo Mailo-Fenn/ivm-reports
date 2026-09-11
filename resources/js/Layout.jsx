@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 
 export default function Layout({ crumbs = [], children }) {
-  const { flash } = usePage().props;
+  // share — страница открыта по ссылке для клиента: без «Проекты», настроек и выхода
+  const { flash, share } = usePage().props;
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -18,7 +19,7 @@ export default function Layout({ crumbs = [], children }) {
     <div className="shell">
       <header className="topbar">
         <div className="topbar-in">
-          <Link href="/projects" className="logo">
+          <Link href={share ? `/share/${share.token}` : '/projects'} className="logo">
             <span className="logo-bar" />
             <span>
               <span className="logo-name">ИСТИНА</span>
@@ -26,20 +27,24 @@ export default function Layout({ crumbs = [], children }) {
             </span>
           </Link>
           <nav className="crumbs">
-            <Link href="/projects">Проекты</Link>
+            {!share && <Link href="/projects">Проекты</Link>}
             {crumbs.map((c, i) => (
               <React.Fragment key={i}>
-                <span className="sep">›</span>
+                {(!share || i > 0) && <span className="sep">›</span>}
                 {c.href ? <Link href={c.href}>{c.label}</Link> : <span className="cur">{c.label}</span>}
               </React.Fragment>
             ))}
           </nav>
           <div className="topbar-spacer" />
-          <nav className="crumbs">
-            <Link href="/settings">Настройки</Link>
-            <span className="sep">·</span>
-            <Link href="/logout" method="post" as="button" type="button">Выйти</Link>
-          </nav>
+          {share ? (
+            <span className="crumbs" style={{ opacity: .8 }}>Отчёт для клиента</span>
+          ) : (
+            <nav className="crumbs">
+              <Link href="/settings">Настройки</Link>
+              <span className="sep">·</span>
+              <Link href="/logout" method="post" as="button" type="button">Выйти</Link>
+            </nav>
+          )}
         </div>
       </header>
       <main className="page">{children}</main>

@@ -51,6 +51,12 @@ class ReportController extends Controller
 
     public function show(Report $report)
     {
+        return Inertia::render('Reports/Show', $this->props($report));
+    }
+
+    // данные страницы отчёта; их же отдаёт ссылка для клиента (ShareController)
+    public function props(Report $report): array
+    {
         $report->load([
             'project',
             'tasks',
@@ -122,7 +128,7 @@ class ReportController extends Controller
             ];
         });
 
-        return Inertia::render('Reports/Show', [
+        return [
             'project' => ['id' => $report->project->id, 'name' => $report->project->name, 'color' => $report->project->color, 'vk_group' => $report->project->vk_group, 'youtube_channel' => $report->project->youtube_channel, 'instagram_connected' => (bool) $report->project->instagram_token, 'telegram_channel' => $report->project->telegram_channel],
             'report' => [
                 'id' => $report->id, 'year' => $report->year, 'month' => $report->month,
@@ -151,7 +157,7 @@ class ReportController extends Controller
                 'posts' => $w->posts,
                 'stories' => $w->stories,
             ]),
-        ]);
+        ];
     }
 
     public function update(Request $request, Report $report)

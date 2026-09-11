@@ -72,6 +72,12 @@ class ProjectController extends Controller
 
     public function show(Project $project)
     {
+        return Inertia::render('Projects/Show', $this->props($project));
+    }
+
+    // данные страницы проекта; их же отдаёт ссылка для клиента (ShareController)
+    public function props(Project $project): array
+    {
         $project->load(['reports.weeklyStats']);
 
         $reports = $project->reports->map(fn ($report) => [
@@ -82,7 +88,7 @@ class ProjectController extends Controller
             'totals'       => $report->totals,
         ]);
 
-        return Inertia::render('Projects/Show', [
+        return [
             'project' => [
                 'id'    => $project->id,
                 'name'  => $project->name,
@@ -99,10 +105,26 @@ class ProjectController extends Controller
                 'instagram_expires_at' => $project->instagram_token_expires_at?->format('d.m.Y'),
                 'instagram_configured' => InstagramOAuth::configured(),
                 'is_active' => $project->is_active,
+                'share_url' => $project->share_token ? url('/share/'.$project->share_token) : null,
             ],
             'reports' => $reports,
             'tariffs' => collect(config('tariffs.list'))->map(fn ($t) => $t['name']),
-        ]);
+        ];
+    }
+
+    // выпустить (или перевыпустить) ссылку для клиента
+    public function share(Project $project)
+    {
+        $project->update(['share_token' => Str::random(40)]);
+
+        return back()->with('success', 'Ссылка для клиента готова — скопируйте её из карточки проекта');
+    }
+
+    public function unshare(Project $project)
+    {
+        $project->update(['share_token' => null]);
+
+        return back()->with('success', 'Ссылка для клиента отключена');
     }
 
     public function update(Request $request, Project $project)

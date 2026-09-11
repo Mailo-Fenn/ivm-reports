@@ -7,7 +7,14 @@ import { fInt, fSigned, fPct } from '../../lib/ui';
 const MONTHS = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
 	'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
-export default function Show({ project, reports, tariffs = {} }) {
+export default function Show({ project, reports, tariffs = {}, share }) {
+	// страница открыта по ссылке для клиента: без правки, интеграций и кнопок
+	const ro = !!share;
+	const reportHref = (id) => (ro ? `/share/${share.token}/reports/${id}` : `/reports/${id}`);
+	const [copied, setCopied] = useState(false);
+	const copyShare = async () => {
+		try { await navigator.clipboard.writeText(project.share_url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* браузер без clipboard — поле можно выделить и скопировать вручную */ }
+	};
 	const now = new Date();
 	const [open, setOpen] = useState(false);
 
@@ -66,6 +73,7 @@ export default function Show({ project, reports, tariffs = {} }) {
 						<h1 className="page-title">{project.name}</h1>
 					)}
 				</div>
+				{!ro && (
 				<div className="page-actions">
 					{editing ? (
 						<>
@@ -95,6 +103,7 @@ export default function Show({ project, reports, tariffs = {} }) {
 						<Trash2 size={16} /> Удалить проект
 					</button>
 				</div>
+				)}
 			</div>
 
 			<div className="project-info card">
@@ -151,6 +160,7 @@ export default function Show({ project, reports, tariffs = {} }) {
 						)}
 					</div>
 
+					{!ro && (<>
 					<div className="info-item">
 						<span className="card-title">Сообщество ВК</span>
 
@@ -287,8 +297,29 @@ export default function Show({ project, reports, tariffs = {} }) {
 						)}
 					</div>
 
+					</>)}
 				</div>
 			</div>
+
+			{!ro && (
+				<div className="card" style={{ marginTop: 16 }}>
+					<div className="card-title">Ссылка для клиента</div>
+					<p style={{ fontSize: 13, color: 'var(--mut)', margin: '8px 0 10px' }}>
+						По ссылке клиент видит проект и отчёты без входа и без возможности что-то менять: нет редактирования,
+						выгрузки презентации и подтягивания соцсетей. Перевыпуск делает старую ссылку недействительной.
+					</p>
+					{project.share_url ? (
+						<div className="form-row" style={{ flexWrap: 'wrap' }}>
+							<input className="inp" readOnly value={project.share_url} style={{ flex: 1, minWidth: 260 }} onFocus={(e) => e.target.select()} />
+							<button className="btn" onClick={copyShare}>{copied ? 'Скопировано' : 'Скопировать'}</button>
+							<button className="btn" onClick={() => { if (confirm('Перевыпустить ссылку? Старая перестанет работать.')) router.post(`/projects/${project.id}/share`); }}>Перевыпустить</button>
+							<button className="btn btn-danger" onClick={() => { if (confirm('Отключить ссылку для клиента?')) router.delete(`/projects/${project.id}/share`); }}>Отключить</button>
+						</div>
+					) : (
+						<button className="btn btn-primary" onClick={() => router.post(`/projects/${project.id}/share`)}>Создать ссылку</button>
+					)}
+				</div>
+			)}
 
 			{open && (
 				<div className="newform">
@@ -319,12 +350,12 @@ export default function Show({ project, reports, tariffs = {} }) {
 				<div className="empty">
 					<CalendarDays size={40} strokeWidth={1.5} style={{ opacity: .4, marginBottom: 12 }} />
 					<h3>Ещё нет отчётов</h3>
-					<p>Создайте отчёт за месяц, чтобы вносить понедельную статистику.</p>
+					<p>{ro ? 'Отчёты появятся здесь, как только будут готовы.' : 'Создайте отчёт за месяц, чтобы вносить понедельную статистику.'}</p>
 				</div>
 			) : (
 				<div className="grid-cards">
 					{reports.map((r) => (
-						<Link key={r.id} href={`/reports/${r.id}`} className="card">
+						<Link key={r.id} href={reportHref(r.id)} className="card">
 							<div className="card-accent" style={{ background: project.color }} />
 							<div className="card-title">{r.period_label}</div>
 							<div className="card-meta">Понедельный отчёт</div>
