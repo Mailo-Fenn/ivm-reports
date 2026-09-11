@@ -545,29 +545,6 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 							))}
 					</div>
 				</Panel>
-				<Panel eyebrow="Бизнес" title="Результаты" light>
-					<div className="biz-key">
-						<BizCard accent icon={Globe} value={biz.ad_clicks ? fInt(biz.ad_clicks) : '—'} label="Переходы с рекламы" />
-						<BizCard accent icon={UserRound} value={biz.ad_subs ? fInt(biz.ad_subs) : '—'} label="Подписчики с рекламы" />
-					</div>
-					<div className="biz-grid">
-						<BizCard icon={Link2} value={fInt(curTot.leads)} label="Переходы на сайт" />
-						<BizCard icon={Eye} value={biz.ad_views ? fInt(biz.ad_views) : '—'} label="Просмотры с рекламы" />
-						<BizCard icon={Wallet} value={biz.ad_budget ? fInt(biz.ad_budget) + ' ₽' : '—'} label="Бюджет рекламы" />
-						<BizCard icon={Tag} value={bizRateFmt(biz, 'ad_clicks')} label="Цена перехода" />
-						<BizCard icon={Tag} value={bizRateFmt(biz, 'ad_subs')} label="Цена подписчика" />
-						<BizCard icon={BarChart3} value={bizRateFmt(biz, 'ad_views', 1000)} label="Цена 1000 просмотров" />
-					</div>
-				</Panel>
-			</div>
-
-			<div className="two">
-				<Panel eyebrow="Итоги" title="Выводы месяца" light>
-					{summary ? summary.split('\n').map((l, i) => <p className="plain" key={i} style={{ marginTop: i ? 8 : 0 }}>{l}</p>) : <p className="plain" style={{ color: 'var(--mut)' }}>Не заполнено.</p>}
-				</Panel>
-				<Panel eyebrow="Дальше" title="План на следующий месяц">
-					{plan ? <ul className="plan">{plan.split('\n').filter(Boolean).map((l, i) => <li key={i}>{l}</li>)}</ul> : <p className="plain" style={{ color: 'var(--creamMut)' }}>Не заполнено.</p>}
-				</Panel>
 			</div>
 
 			{Array.isArray(community) && community.length > 0 && (
@@ -582,6 +559,31 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 					</div>
 				</Panel>
 			)}
+
+				<Panel eyebrow="Бизнес" title="Результаты" light>
+					<div className="biz-key">
+						<BizCard accent icon={Globe} value={biz.ad_clicks ? fInt(biz.ad_clicks) : '—'} label="Переходы с рекламы" />
+						<BizCard accent icon={UserRound} value={biz.ad_subs ? fInt(biz.ad_subs) : '—'} label="Подписчики с рекламы" />
+					</div>
+					<div className="biz-grid">
+						<BizCard icon={Link2} value={fInt(curTot.leads)} label="Переходы на сайт" />
+						<BizCard icon={Eye} value={biz.ad_views ? fInt(biz.ad_views) : '—'} label="Просмотры с рекламы" />
+						<BizCard icon={Wallet} value={biz.ad_budget ? fInt(biz.ad_budget) + ' ₽' : '—'} label="Бюджет рекламы" />
+						<BizCard icon={Tag} value={bizRateFmt(biz, 'ad_clicks')} label="Цена перехода" />
+						<BizCard icon={Tag} value={bizRateFmt(biz, 'ad_subs')} label="Цена подписчика" />
+						<BizCard icon={BarChart3} value={bizRateFmt(biz, 'ad_views', 1000)} label="Цена 1000 просмотров" />
+					</div>
+				</Panel>
+
+			<div className="two">
+				<Panel eyebrow="Итоги" title="Выводы месяца" light>
+					{summary ? summary.split('\n').map((l, i) => <p className="plain" key={i} style={{ marginTop: i ? 8 : 0 }}>{l}</p>) : <p className="plain" style={{ color: 'var(--mut)' }}>Не заполнено.</p>}
+				</Panel>
+				<Panel eyebrow="Дальше" title="План на следующий месяц">
+					{plan ? <ul className="plan">{plan.split('\n').filter(Boolean).map((l, i) => <li key={i}>{l}</li>)}</ul> : <p className="plain" style={{ color: 'var(--creamMut)' }}>Не заполнено.</p>}
+				</Panel>
+			</div>
+
 		</>
 	);
 }
