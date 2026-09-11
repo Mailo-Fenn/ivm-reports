@@ -14,10 +14,10 @@ const uploadPhoto = async (file) => {
 	return data.path;
 };
 
-function Avatar({ photo, name, size = 64 }) {
+function Photo({ photo, name }) {
 	return photo
-		? <img className="emp-photo" src={`/storage/${photo}`} alt={name} style={{ width: size, height: size }} />
-		: <span className="emp-photo emp-initials" style={{ width: size, height: size, fontSize: size * 0.34 }}>{initials(name) || '?'}</span>;
+		? <img className="emp-photo" src={`/storage/${photo}`} alt={name} />
+		: <span className="emp-photo emp-initials">{initials(name) || '?'}</span>;
 }
 
 // форма сотрудника: общая для добавления и редактирования
@@ -35,10 +35,12 @@ function EmployeeForm({ initial, onSubmit, onCancel, busy }) {
 	return (
 		<div className="emp-form">
 			<div className="emp-form-photo">
-				<Avatar photo={form.photo} name={form.name} size={72} />
+				<Photo photo={form.photo} name={form.name} />
 				<input id={id} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => pick(e.target.files[0])} />
-				<label htmlFor={id} className="btn btn-mini"><Camera size={13} /> {uploading ? 'Загрузка…' : form.photo ? 'Заменить фото' : 'Фото'}</label>
-				{form.photo && <button className="btn btn-mini btn-danger" onClick={() => set('photo', null)}>Убрать</button>}
+				<div className="form-row" style={{ justifyContent: 'center' }}>
+					<label htmlFor={id} className="btn btn-mini"><Camera size={13} /> {uploading ? 'Загрузка…' : form.photo ? 'Заменить фото' : 'Загрузить фото'}</label>
+					{form.photo && <button className="btn btn-mini btn-danger" onClick={() => set('photo', null)}>Убрать</button>}
+				</div>
 			</div>
 			<div className="emp-form-fields">
 				<input className="inp" placeholder="Имя и фамилия" value={form.name} autoFocus onChange={(e) => set('name', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && form.name.trim() && onSubmit(form)} />
@@ -90,24 +92,22 @@ export default function Index({ employees }) {
 					<p>Добавьте сотрудника — проекты подтянутся по полю «Ответственный» в карточке проекта.</p>
 				</div>
 			) : (
-				<div className="grid-cards">
+				<div className="emp-grid">
 					{employees.map((e) => (
 						<div key={e.id} className="card emp-card">
 							{editingId === e.id ? (
 								<EmployeeForm initial={e} onSubmit={(f) => save(e.id, f)} onCancel={() => setEditingId(null)} busy={busy} />
 							) : (
 								<>
-									<div className="emp-head">
-										<Avatar photo={e.photo} name={e.name} />
-										<div style={{ minWidth: 0 }}>
-											<div className="card-title" style={{ marginTop: 0 }}>{e.name}</div>
-											<div className="card-meta" style={{ marginTop: 2 }}>{e.position || 'Должность не указана'}</div>
-										</div>
+									<div className="emp-photo-wrap">
+										<Photo photo={e.photo} name={e.name} />
 										<div className="emp-actions">
 											<button className="btn btn-mini" title="Редактировать" onClick={() => setEditingId(e.id)}><Pencil size={13} /></button>
 											<button className="btn btn-mini btn-danger" title="Удалить" onClick={() => remove(e)}><Trash2 size={13} /></button>
 										</div>
 									</div>
+									<div className="emp-name">{e.name}</div>
+									<div className="emp-position">{e.position || 'Должность не указана'}</div>
 									<div className="emp-projects-label">Проекты</div>
 									{e.projects.length ? (
 										<div className="emp-projects">

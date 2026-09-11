@@ -367,17 +367,26 @@ button { font-family: inherit; cursor: pointer; }
 .modal .ei-x { background: rgba(178,58,44,.1); color: var(--red); }
 
 /* ---------- сотрудники ---------- */
-.emp-card { display: flex; flex-direction: column; gap: 10px; }
-.emp-head { display: flex; align-items: center; gap: 14px; }
-.emp-photo { border-radius: 50%; object-fit: cover; flex: none; display: grid; place-items: center; background: var(--wine); color: var(--creamTx); font-family: 'Unbounded'; font-weight: 700; }
-.emp-actions { margin-left: auto; display: flex; gap: 6px; align-self: flex-start; }
-.emp-projects-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mut); margin-top: 4px; }
+.emp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.emp-card { display: flex; flex-direction: column; gap: 6px; padding: 14px; }
+.emp-photo-wrap { position: relative; }
+.emp-photo { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 14px; background: var(--wine); }
+.emp-initials { display: grid; place-items: center; color: var(--creamTx); font-family: 'Unbounded'; font-weight: 700; font-size: 44px; letter-spacing: .02em; }
+.emp-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; opacity: 0; transition: opacity .15s; }
+.emp-card:hover .emp-actions, .emp-actions:focus-within { opacity: 1; }
+.emp-actions .btn { background: rgba(243,236,224,.92); border-color: transparent; }
+.emp-actions .btn-danger { color: var(--red); }
+.emp-name { font-family: 'Unbounded'; font-weight: 700; font-size: 16px; color: var(--wine); margin-top: 10px; line-height: 1.2; }
+.emp-position { font-size: 13px; font-weight: 500; color: var(--mut); }
+.emp-projects-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mut); margin-top: 8px; }
 .emp-projects { display: flex; flex-wrap: wrap; gap: 6px; }
 .emp-chip { padding: 5px 11px 5px 8px; font-size: 12.5px; }
 .emp-chip:hover { border-color: var(--wine); }
 .emp-chip.off { opacity: .55; }
 .emp-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-.emp-form { display: flex; gap: 16px; align-items: flex-start; }
-.emp-form-photo { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: none; }
-.emp-form-fields { flex: 1; display: grid; gap: 8px; min-width: 0; }
+.emp-form { display: grid; gap: 12px; }
+.newform .emp-form { grid-template-columns: 220px 1fr; align-items: start; }
+.emp-form-photo { display: grid; gap: 8px; }
+.emp-form-fields { display: grid; gap: 8px; min-width: 0; }
 .emp-form-fields .inp { width: 100%; }
+@media (max-width: 700px) { .newform .emp-form { grid-template-columns: 1fr; } }
