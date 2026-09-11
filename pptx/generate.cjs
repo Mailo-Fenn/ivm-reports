@@ -220,15 +220,18 @@ KEYS.forEach((pk) => {
   });
 });
 
-/* ============ 4. ОБНОВЛЕНИЯ ВК (работа с сообществом) ============ */
-{
-  const items = (D.community || []).filter((c) => c.caption || c.image);
+/* ============ 4. ОБНОВЛЕНИЯ ПО ПЛОЩАДКАМ (работа с сообществом) ============ */
+// community: {vk: [{caption, image}], ig: [...]}; старый формат (плоский список) считаем ВК
+const COMMUNITY = Array.isArray(D.community) ? { vk: D.community } : (D.community || {});
+Object.keys(COMMUNITY).forEach((pk) => {
+  const items = (COMMUNITY[pk] || []).filter((c) => c.caption || c.image);
+  const platName = PLAT_SHORT[pk] || pk;
   for (let i = 0; i < items.length; i += 2) {
     const pair = items.slice(i, i + 2);
     const s = slide();
     s.addText(
-      [{ text: "Обновления", options: { color: WINE } }, { text: " ВК", options: { color: DARK } }],
-      { x: 0.5, y: 1.3, w: 8.0, h: 1.11, fontFace: FONT, fontSize: 60, margin: 0 }
+      [{ text: "Обновления", options: { color: WINE } }, { text: " " + platName, options: { color: DARK } }],
+      { x: 0.5, y: 1.3, w: 11.0, h: 1.11, fontFace: FONT, fontSize: platName.length > 6 ? 54 : 60, margin: 0 }
     );
     logo(s, 0.67, 0.5);
     const slots = [{ x: 0.67, w: 5.66 }, { x: 6.67, w: 5.85 }];
@@ -249,7 +252,7 @@ KEYS.forEach((pk) => {
       }
     });
   }
-}
+});
 
 /* ============ 5. МЕТРИКИ ПО МЕСЯЦАМ + ПОСТЫ (по площадкам) ============ */
 const METRICS = [["subs", "Подписчики"], ["views", "Просмотры"], ["inter", "Взаимодействия"]];

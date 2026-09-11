@@ -73,10 +73,12 @@ class ReportPptxController extends Controller
             'metric_notes' => $report->metric_notes,
             'summary' => $report->summary,
             'plan_next' => $report->plan_next,
-            'community' => collect($report->community ?? [])->map(fn ($c) => [
-                'caption' => $c['caption'] ?? '',
-                'image' => $img($c['image'] ?? null),
-            ])->values()->all(),
+            'community' => collect(ReportController::communityByPlatform($report->community))
+                ->map(fn ($items) => collect($items)->map(fn ($c) => [
+                    'caption' => $c['caption'] ?? '',
+                    'image' => $img($c['image'] ?? null),
+                ])->values()->all())
+                ->all(),
         ];
 
         $stamp = Str::random(8);

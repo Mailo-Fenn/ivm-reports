@@ -128,7 +128,7 @@ class ReportController extends Controller
                 'id' => $report->id, 'year' => $report->year, 'month' => $report->month,
                 'period_label' => $report->period_label,
                 'summary' => $report->summary, 'plan_next' => $report->plan_next,
-                'community' => $report->community, 'business' => $report->business,
+                'community' => self::communityByPlatform($report->community), 'business' => $report->business,
                 'metric_notes' => $report->metric_notes,
             ],
             'reports' => $reports,
@@ -160,8 +160,9 @@ class ReportController extends Controller
             'summary' => 'nullable|string',
             'plan_next' => 'nullable|string',
             'community' => 'nullable|array',
-            'community.*.image' => 'nullable|string|max:255',
-            'community.*.caption' => 'nullable|string',
+            'community.*' => 'nullable|array',
+            'community.*.*.image' => 'nullable|string|max:255',
+            'community.*.*.caption' => 'nullable|string',
             'metric_notes' => 'nullable|array',
             'metric_notes.*' => 'array',
             'metric_notes.*.*' => 'array',
@@ -222,11 +223,7 @@ class ReportController extends Controller
             'summary' => $data['summary'] ?? null,
             'plan_next' => $data['plan_next'] ?? null,
             'metric_notes' => $notes ?: null,
-            // пустые строки (ни картинки, ни подписи) не сохраняем
-            'community' => array_values(array_filter(
-                $data['community'] ?? [],
-                fn ($i) => !empty($i['image']) || trim($i['caption'] ?? '') !== ''
-            )) ?: null,
+            'community' => $this->cleanCommunity($data['community'] ?? []),
             'business' => array_intersect_key($data['business'] ?? [], array_flip(['ad_clicks', 'ad_subs', 'ad_views', 'ad_budget'])) ?: null,
         ]);
 
@@ -303,6 +300,37 @@ class ReportController extends Controller
         $report->syncPlatformStats();
 
         return redirect()->route('reports.show', $report)->with('success', 'Отчёт сохранён');
+    }
+
+    // «Работа с сообществом» по площадкам: {vk: [{image, caption}], ig: [...]};
+    // старые отчёты хранили плоский список — считаем его записями ВК
+    public static function communityByPlatform($community): array
+    {
+        if (!is_array($community) || !$community) {
+            return [];
+        }
+        if (array_is_list($community)) {
+            return ['vk' => array_values($community)];
+        }
+
+        return $community;
+    }
+
+    // оставляем только известные площадки и непустые строки (картинка или подпись)
+    private function cleanCommunity(array $community): ?array
+    {
+        $out = [];
+        foreach ($community as $platform => $items) {
+            if (!in_array($platform, $this->platforms, true) || !is_array($items)) {
+                continue;
+            }
+            $kept = array_values(array_filter($items, fn ($i) => is_array($i) && (!empty($i['image']) || trim($i['caption'] ?? '') !== '')));
+            if ($kept) {
+                $out[$platform] = array_map(fn ($i) => ['image' => $i['image'] ?? null, 'caption' => $i['caption'] ?? ''], $kept);
+            }
+        }
+
+        return $out ?: null;
     }
 
     public function destroy(Report $report)

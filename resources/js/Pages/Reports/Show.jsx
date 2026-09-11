@@ -64,6 +64,9 @@ const KEYS = {
 	tg: ['subs', 'views', 'inter', 'er', 'posts'],
 };
 
+// «Работа с сообществом» по площадкам: {vk: [{image, caption}], …}; старый плоский список — записи ВК
+const normCommunity = (c) => (Array.isArray(c) ? (c.length ? { vk: c } : {}) : (c && typeof c === 'object' ? c : {}));
+
 const emptyStat = () => ({ subs: 0, views: 0, reach: 0, inter: 0, leads: 0, posts: 0, stories: 0 });
 
 const calcPlatformStatsFromWeeks = (weeks) => {
@@ -217,7 +220,7 @@ export default function Show({ project, report, reports, platformNames, current,
 	const [ct, setCt] = useState(content || []);
 	const [summary, setSummary] = useState(report.summary || '');
 	const [plan, setPlan] = useState(report.plan_next || '');
-	const [community, setCommunity] = useState(Array.isArray(report.community) ? report.community : []);
+	const [community, setCommunity] = useState(normCommunity(report.community));
 	const [biz, setBiz] = useState(report.business || {});
 	// у включённой площадки без строк по неделям (YouTube в старых отчётах) создаём пустые недели,
 	// иначе в редакторе нечего заполнять; на сервер они уйдут при сохранении
@@ -269,7 +272,7 @@ export default function Show({ project, report, reports, platformNames, current,
 	useEffect(() => {
 		setPf(initPf()); setTk(tasks || []); setCt(content || []);
 		setSummary(report.summary || ''); setPlan(report.plan_next || '');
-		setCommunity(Array.isArray(report.community) ? report.community : []); setBiz(report.business || {}); setWk(initWk());
+		setCommunity(normCommunity(report.community)); setBiz(report.business || {}); setWk(initWk());
 		setMn(report.metric_notes || {});
 	}, [report.id]);
 
@@ -330,7 +333,7 @@ export default function Show({ project, report, reports, platformNames, current,
 	const cancel = () => {
 		setEditing(false); setPf(initPf()); setTk(tasks || []); setCt(content || []);
 		setSummary(report.summary || ''); setPlan(report.plan_next || '');
-		setCommunity(Array.isArray(report.community) ? report.community : []); setBiz(report.business || {}); setWk(initWk());
+		setCommunity(normCommunity(report.community)); setBiz(report.business || {}); setWk(initWk());
 		setMn(report.metric_notes || {});
 	};
 	const removeReport = () => { if (confirm('Удалить отчёт?')) router.delete(`/reports/${report.id}`); };
@@ -547,10 +550,10 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 				</Panel>
 			</div>
 
-			{Array.isArray(community) && community.length > 0 && (
-				<Panel eyebrow="Сообщество" title="Работа с сообществом">
+			{PLIST.filter((p) => (community[p] || []).length > 0).map((p) => (
+				<Panel key={p} eyebrow="Сообщество" title={`Работа с сообществом · ${platformNames[p]}`}>
 					<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
-						{community.map((c, i) => (
+						{community[p].map((c, i) => (
 							<figure key={i} style={{ margin: 0 }}>
 								{c.image && <img src={`/storage/${c.image}`} alt={c.caption || ''} style={{ width: '100%', borderRadius: 10, display: 'block' }} />}
 								{c.caption && <figcaption className="plain" style={{ marginTop: c.image ? 8 : 0 }}>{c.caption}</figcaption>}
@@ -558,7 +561,7 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 						))}
 					</div>
 				</Panel>
-			)}
+			))}
 
 				<Panel eyebrow="Бизнес" title="Результаты" light>
 					<div className="biz-key">
@@ -725,7 +728,11 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 		}
 	};
 
-	const uploadCommunityImage = async (index, file) => {
+	// список записей площадки и его замена (остальные площадки не трогаем)
+	const communityOf = (p) => community[p] || [];
+	const setCommunityFor = (p, list) => setCommunity({ ...community, [p]: list });
+
+	const uploadCommunityImage = async (platform, index, file) => {
 		if (!file) return;
 
 		const formData = new FormData();
@@ -733,21 +740,13 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 
 		try {
 			const { data } = await axios.post('/upload', formData, {
-				headers: {
-					'Content-Type': 'multipart/form-data',
-				},
+				headers: { 'Content-Type': 'multipart/form-data' },
 			});
 
-			setCommunity(list =>
-				list.map((item, i) =>
-					i === index
-						? {
-							...item,
-							image: data.path,
-						}
-						: item
-				)
-			);
+			setCommunity((prev) => ({
+				...prev,
+				[platform]: (prev[platform] || []).map((item, i) => (i === index ? { ...item, image: data.path } : item)),
+			}));
 		} catch (e) {
 			alert('Ошибка загрузки изображения');
 			console.error(e);
@@ -1070,56 +1069,59 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 				))}
 			</div>
 
-			<div className="edit-label" style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between' }}>
-				<span>Работа с сообществом</span>
-				<button className="btn btn-mini" onClick={() => setCommunity([...community, { image: null, caption: '' }])}><Plus size={13} /></button>
-			</div>
-			<div className="edit-grid" style={{ marginTop: 8 }}>
-				{community.map((c, i) => (
-					<div key={i} style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr auto', gap: 6, alignItems: 'center' }}>
-						<input
-							id={`comm-file-${i}`}
-							type="file"
-							accept="image/*"
-							onChange={(e) => uploadCommunityImage(i, e.target.files[0])}
-							style={{ display: 'none' }}
-						/>
+			<div className="edit-label" style={{ marginTop: 14 }}>Работа с сообществом (по площадкам)</div>
+			<div className="platrorm-stat-wrapper">
+				{PLIST.map((p) => (
+					<details key={p} style={{ marginTop: 10 }} open={communityOf(p).length > 0}>
+						<summary className="edit-label" style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+							<span>Работа с сообществом · {platformNames[p]}{communityOf(p).length ? ` (${communityOf(p).length})` : ''}</span>
+							<button className="btn btn-mini" onClick={(e) => { e.preventDefault(); setCommunityFor(p, [...communityOf(p), { image: null, caption: '' }]); }}><Plus size={13} /></button>
+						</summary>
+						<div className="edit-grid" style={{ marginTop: 8 }}>
+							{communityOf(p).map((c, i) => (
+								<div key={i} style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr auto', gap: 6, alignItems: 'center' }}>
+									<input
+										id={`comm-file-${p}-${i}`}
+										type="file"
+										accept="image/*"
+										onChange={(e) => uploadCommunityImage(p, i, e.target.files[0])}
+										style={{ display: 'none' }}
+									/>
 
-						<label
-							htmlFor={`comm-file-${i}`}
-							style={{
-								display: 'inline-flex',
-								alignItems: 'center',
-								gap: 8,
-								padding: '10px 16px',
-								background: '#f0a29b24',
-								color: 'var(--redL)',
-								borderRadius: 8,
-								cursor: 'pointer',
-								fontSize: 14,
-								fontWeight: 500,
-								transition: 'background .2s'
-							}}
-						>
-							{c.image ? 'Заменить изображение' : 'Выбрать изображение'}
-						</label>
+									<label
+										htmlFor={`comm-file-${p}-${i}`}
+										style={{
+											display: 'inline-flex',
+											alignItems: 'center',
+											gap: 8,
+											padding: '10px 16px',
+											background: '#f0a29b24',
+											color: 'var(--redL)',
+											borderRadius: 8,
+											cursor: 'pointer',
+											fontSize: 14,
+											fontWeight: 500,
+											transition: 'background .2s'
+										}}
+									>
+										{c.image ? 'Заменить изображение' : 'Выбрать изображение'}
+									</label>
 
-						{c.image ? (
-							<img
-								src={`/storage/${c.image}`}
-								style={{
-									width: 60,
-									height: 60,
-									objectFit: 'cover',
-									borderRadius: 6
-								}}
-							/>
-						) : <span />}
+									{c.image ? (
+										<img
+											src={`/storage/${c.image}`}
+											style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6 }}
+										/>
+									) : <span />}
 
-						<input className="ei ei-text" value={c.caption || ''} placeholder="Подпись к изображению" onChange={(e) => setCommunity(community.map((x, j) => j === i ? { ...x, caption: e.target.value } : x))} />
+									<input className="ei ei-text" value={c.caption || ''} placeholder="Подпись к изображению" onChange={(e) => setCommunityFor(p, communityOf(p).map((x, j) => j === i ? { ...x, caption: e.target.value } : x))} />
 
-						<button className="ei-x" onClick={() => setCommunity(community.filter((_, j) => j !== i))}><Trash2 size={13} /></button>
-					</div>
+									<button className="ei-x" onClick={() => setCommunityFor(p, communityOf(p).filter((_, j) => j !== i))}><Trash2 size={13} /></button>
+								</div>
+							))}
+							{communityOf(p).length === 0 && <div style={{ fontSize: 12, color: 'var(--mut)' }}>Записей нет — добавьте кнопкой «+»</div>}
+						</div>
+					</details>
 				))}
 			</div>
 
