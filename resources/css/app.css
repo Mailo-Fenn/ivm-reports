@@ -341,6 +341,6 @@ button { font-family: inherit; cursor: pointer; }
 .th-hint i { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: rgba(243,236,224,.18); font-style: normal; font-size: 9px; margin-left: 2px; cursor: help; vertical-align: 1px; }
 .wk-table th em { font-style: normal; font-size: 9px; color: var(--redL); margin-left: 4px; }
 .er-pill { display: inline-block; min-width: 58px; padding: 7px 8px; border-radius: 8px; background: rgba(243,236,224,.1); font-weight: 700; }
-.wk-total td { background: rgba(243,236,224,.08); font-weight: 800; border-bottom: none; padding: 11px 8px; }
+.wk-total td { background: var(--creamTx); color: var(--wine); font-weight: 800; border-bottom: none; padding: 12px 8px; }
 .wk-total td:first-child { border-radius: 10px 0 0 10px; }
 .wk-total td:last-child { border-radius: 0 10px 10px 0; }
