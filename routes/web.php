@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\GoogleOAuthController;
 use App\Http\Controllers\InstagramOAuthController;
 use App\Http\Controllers\InstagramSyncController;
@@ -37,6 +38,11 @@ Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('pro
 Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
 Route::post('/projects/{project}/share', [ProjectController::class, 'share'])->name('projects.share');
 Route::delete('/projects/{project}/share', [ProjectController::class, 'unshare'])->name('projects.unshare');
+
+Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
+Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
+Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
+Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
 
 Route::post('/projects/{project}/reports', [ReportController::class, 'store'])->name('reports.store');
 Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show');

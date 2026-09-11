@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Employee;
 use App\Models\Project;
 use App\Services\InstagramOAuth;
 use App\Services\VkApi;
@@ -109,6 +110,8 @@ class ProjectController extends Controller
             ],
             'reports' => $reports,
             'tariffs' => collect(config('tariffs.list'))->map(fn ($t) => $t['name']),
+            // подсказки для поля «Ответственный»: совпадение имени связывает проект с карточкой сотрудника
+            'employees' => Employee::orderBy('name')->pluck('name')->all(),
         ];
     }
 

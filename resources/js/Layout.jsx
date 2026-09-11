@@ -4,6 +4,8 @@ import { Link, usePage } from '@inertiajs/react';
 export default function Layout({ crumbs = [], children }) {
   // share — страница открыта по ссылке для клиента: без «Проекты», настроек и выхода
   const { flash, share } = usePage().props;
+  const { url } = usePage();
+  const section = url.startsWith('/employees') ? 'employees' : 'projects';
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -27,7 +29,13 @@ export default function Layout({ crumbs = [], children }) {
             </span>
           </Link>
           <nav className="crumbs">
-            {!share && <Link href="/projects">Проекты</Link>}
+            {!share && (
+              <>
+                <Link href="/projects" className={section === 'projects' && crumbs.length === 0 ? 'cur' : ''}>Проекты</Link>
+                <span className="sep">·</span>
+                <Link href="/employees" className={section === 'employees' ? 'cur' : ''}>Сотрудники</Link>
+              </>
+            )}
             {crumbs.map((c, i) => (
               <React.Fragment key={i}>
                 {(!share || i > 0) && <span className="sep">›</span>}

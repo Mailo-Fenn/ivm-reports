@@ -365,3 +365,19 @@ button { font-family: inherit; cursor: pointer; }
 .modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .modal-title { font-family: 'Unbounded'; font-weight: 800; font-size: 20px; color: var(--wine); margin-top: 4px; }
 .modal .ei-x { background: rgba(178,58,44,.1); color: var(--red); }
+
+/* ---------- сотрудники ---------- */
+.emp-card { display: flex; flex-direction: column; gap: 10px; }
+.emp-head { display: flex; align-items: center; gap: 14px; }
+.emp-photo { border-radius: 50%; object-fit: cover; flex: none; display: grid; place-items: center; background: var(--wine); color: var(--creamTx); font-family: 'Unbounded'; font-weight: 700; }
+.emp-actions { margin-left: auto; display: flex; gap: 6px; align-self: flex-start; }
+.emp-projects-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mut); margin-top: 4px; }
+.emp-projects { display: flex; flex-wrap: wrap; gap: 6px; }
+.emp-chip { padding: 5px 11px 5px 8px; font-size: 12.5px; }
+.emp-chip:hover { border-color: var(--wine); }
+.emp-chip.off { opacity: .55; }
+.emp-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.emp-form { display: flex; gap: 16px; align-items: flex-start; }
+.emp-form-photo { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: none; }
+.emp-form-fields { flex: 1; display: grid; gap: 8px; min-width: 0; }
+.emp-form-fields .inp { width: 100%; }

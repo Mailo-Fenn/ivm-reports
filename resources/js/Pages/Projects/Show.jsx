@@ -7,7 +7,7 @@ import { fInt, fSigned, fPct } from '../../lib/ui';
 const MONTHS = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
 	'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
-export default function Show({ project, reports, tariffs = {}, share }) {
+export default function Show({ project, reports, tariffs = {}, share, employees = [] }) {
 	// страница открыта по ссылке для клиента: без правки, интеграций и кнопок
 	const ro = !!share;
 	const reportHref = (id) => (ro ? `/share/${share.token}/reports/${id}` : `/reports/${id}`);
@@ -157,13 +157,21 @@ export default function Show({ project, reports, tariffs = {}, share }) {
 						<span className="card-title">Ответственный</span>
 
 						{editing ? (
-							<input
-								className="inp"
-								value={edit.data.manager}
-								onChange={(e) =>
-									edit.setData('manager', e.target.value)
-								}
-							/>
+							<>
+								<input
+									className="inp"
+									list="employee-names"
+									placeholder="Имя сотрудника"
+									value={edit.data.manager}
+									onChange={(e) =>
+										edit.setData('manager', e.target.value)
+									}
+								/>
+								<datalist id="employee-names">
+									{employees.map((n) => <option key={n} value={n} />)}
+								</datalist>
+								<span style={{ fontSize: 12, color: 'var(--mut)' }}>совпадение с именем в разделе «Сотрудники» добавит проект в его карточку</span>
+							</>
 						) : (
 							<span>{project.manager || '—'}</span>
 						)}
