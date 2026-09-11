@@ -620,7 +620,7 @@ function PlatformView({ pid, platformNames, stats, previous, liveSeries, content
 
 			<Panel eyebrow="Сравнение" title={`${platformNames[pid]}: месяц к месяцу`} light>
 				<div className="mom">
-					<div className="mom-row mom-h"><span>Показатель</span><span>{previous.label || 'Прошлый месяц'}</span><span>{periodLabel}</span><span>Изменение</span></div>
+					<div className="mom-row mom-h"><span>Показатель</span><span>{previous.label || 'Прошлый месяц'}</span><span>{periodLabel}</span><span>Динамика</span></div>
 					{keys.map((k) => {
 						const meta = METR[k];
 						const diff = prev ? cur[k] - prev[k] : null;
