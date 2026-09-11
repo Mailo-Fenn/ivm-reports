@@ -137,10 +137,17 @@ class Report extends Model
         return $result;
     }
 
-    // YouTube и Telegram показываем только там, где они реально ведутся: у проекта указан канал
-    // либо по площадке уже есть цифры; остальные площадки включены всегда (как раньше)
+    // Включена ли площадка в отчёте. Явный выбор тумблером в редакторе (platform_stats.is_enabled)
+    // главнее; без него YouTube и Telegram показываем только при заполненном канале у проекта
+    // либо при наличии цифр, остальные площадки включены всегда
     public function platformEnabled(string $platform): bool
     {
+        $stats = $this->relationLoaded('platformStats') ? $this->platformStats : $this->platformStats()->get();
+        $ps = $stats->firstWhere('platform', $platform);
+        if ($ps && $ps->is_enabled !== null) {
+            return (bool) $ps->is_enabled;
+        }
+
         $field = self::OPTIONAL_PLATFORMS[$platform] ?? null;
         if (!$field) {
             return true;
@@ -148,8 +155,6 @@ class Report extends Model
         if ($this->project?->{$field}) {
             return true;
         }
-        $stats = $this->relationLoaded('platformStats') ? $this->platformStats : $this->platformStats()->get();
-        $ps = $stats->firstWhere('platform', $platform);
 
         return $ps ? ($ps->subs || $ps->views || $ps->inter || $ps->posts) : false;
     }

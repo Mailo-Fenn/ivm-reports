@@ -187,6 +187,8 @@ class ReportController extends Controller
             'content.*.reposts' => 'integer|min:0',
             'content.*.insight' => 'nullable|string',
             'content.*.image' => 'nullable|string|max:255',
+            'platforms' => 'nullable|array',
+            'platforms.*' => 'boolean',
             'weeks' => 'array',
             'weeks.*.id' => 'nullable|integer',
             'weeks.*.label' => 'required_with:weeks|string|max:255',
@@ -298,6 +300,13 @@ class ReportController extends Controller
         }
         
         $report->syncPlatformStats();
+
+        // тумблеры площадок из редактора: явное включение/выключение поверх авто-правила
+        foreach (($data['platforms'] ?? []) as $platform => $enabled) {
+            if (in_array($platform, $this->platforms, true)) {
+                $report->platformStats()->where('platform', $platform)->update(['is_enabled' => (bool) $enabled]);
+            }
+        }
 
         return redirect()->route('reports.show', $report)->with('success', 'Отчёт сохранён');
     }

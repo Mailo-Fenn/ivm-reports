@@ -317,6 +317,7 @@ export default function Show({ project, report, reports, platformNames, current,
 			community,
 			weeks: wk,
 			metric_notes: mn,
+			platforms: Object.fromEntries(ALL_PLATFORMS.map((p) => [p, !!pf[p]?.is_enabled])),
 		}, {
 			preserveScroll: true,
 
@@ -768,23 +769,18 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 	return (
 		<Panel eyebrow="Редактирование" title="Данные отчёта">
 			<div className="platform-edit">
-				{Object.entries(current).map(([key, item]) => (
-					<label 
-						key={key}
-						className={'platform-check ' + (pf[key]?.is_enabled ? 'active' : '')}
-					>
-						<input
-							type="checkbox"
-							checked={pf[key]?.is_enabled || false}
-							onChange={() => togglePlatform(key)}
-						/>
-
-						<span className="platform-box">
-							<span className="platform-dot"></span>
-							{platformNames[key]}
+				{Object.keys(current).map((key) => (
+					<label key={key} className={'platform-toggle' + (pf[key]?.is_enabled ? ' on' : '')}>
+						<span className="switch">
+							<input type="checkbox" checked={!!pf[key]?.is_enabled} onChange={() => togglePlatform(key)} />
+							<i />
 						</span>
+						<span>{platformNames[key]}</span>
 					</label>
 				))}
+			</div>
+			<div style={{ fontSize: 12, color: 'var(--creamMut)', margin: '-6px 0 16px' }}>
+				Выключенные площадки не показываются в отчёте и презентации. Выбор сохраняется вместе с отчётом.
 			</div>
 
 			<div className='two'>
