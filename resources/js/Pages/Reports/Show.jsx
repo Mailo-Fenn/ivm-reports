@@ -444,7 +444,7 @@ export default function Show({ project, report, reports, platformNames, current,
 
 			{view === 'overview'
 				? <Overview {...{ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks: tk, biz, summary, plan, community, setView, PLIST }} />
-				: <PlatformView pid={view} {...{ platformNames, stats, previous, liveSeries, content: ct, PLIST }} />}
+				: <PlatformView pid={view} {...{ platformNames, stats, previous, liveSeries, content: ct, PLIST, periodLabel: report.period_label }} />}
 
 			{editing && <Editor {...{ platformNames, PLIST, togglePlatform, current, previous, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, mn, setMn, num }} />}
 
@@ -595,7 +595,7 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 	);
 }
 
-function PlatformView({ pid, platformNames, stats, previous, liveSeries, content, PLIST }) {
+function PlatformView({ pid, platformNames, stats, previous, liveSeries, content, PLIST, periodLabel }) {
 	const cur = { ...stats[pid], er: erOf(stats[pid]) };
 	const prevRaw = previous.stats ? previous.stats[pid] : null;
 	const prev = prevRaw ? { ...prevRaw, er: erOf(prevRaw) } : null;
@@ -620,7 +620,7 @@ function PlatformView({ pid, platformNames, stats, previous, liveSeries, content
 
 			<Panel eyebrow="Сравнение" title={`${platformNames[pid]}: месяц к месяцу`} light>
 				<div className="mom">
-					<div className="mom-row mom-h"><span>Показатель</span><span>{previous.label || '—'}</span><span>тек.</span><span>Δ</span></div>
+					<div className="mom-row mom-h"><span>Показатель</span><span>{previous.label || 'Прошлый месяц'}</span><span>{periodLabel}</span><span>Изменение</span></div>
 					{keys.map((k) => {
 						const meta = METR[k];
 						const diff = prev ? cur[k] - prev[k] : null;
