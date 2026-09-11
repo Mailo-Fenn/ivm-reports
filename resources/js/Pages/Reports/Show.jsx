@@ -426,6 +426,7 @@ export default function Show({ project, report, reports, platformNames, current,
 				<div className="tab-note">Динамика — к предыдущему месяцу{previous.label ? ` (${previous.label})` : ''}</div>
 			</div>
 
+			{!ro && (
 			<div className="tabs-months">
 				{reports.map((m) => {
 					const active = m.id === report.id;
@@ -448,9 +449,10 @@ export default function Show({ project, report, reports, platformNames, current,
 					);
 				})}
 			</div>
+			)}
 
 			{view === 'overview'
-				? <Overview {...{ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks: tk, biz, summary, plan, community, setView, PLIST }} />
+				? <Overview {...{ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks: tk, biz, summary, plan, community, setView, PLIST, ro }} />
 				: <PlatformView pid={view} {...{ platformNames, stats, previous, liveSeries, content: ct, PLIST, periodLabel: report.period_label }} />}
 
 			{editing && !ro && <Editor {...{ platformNames, PLIST, togglePlatform, current, previous, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, mn, setMn, num }} />}
@@ -473,7 +475,7 @@ function BizCard({ icon: Ico, value, label, accent }) {
 	);
 }
 
-function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks, biz, summary, plan, community, setView, PLIST }) {
+function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks, biz, summary, plan, community, setView, PLIST, ro }) {
 	const kpis = [
 		{ key: 'subs', label: 'База подписчиков', val: curTot.subs, prev: prevTot?.subs, icon: Users },
 		{ key: 'views', label: 'Просмотры · все площадки', val: curTot.views, prev: prevTot?.views, icon: Eye },
@@ -529,6 +531,8 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 				</div>
 			</Panel>
 
+			{/* клиенту по ссылке — только дашборд: задачи, сообщество, бизнес и итоги скрыты */}
+			{!ro && (<>
 			<div className="two">
 				<Panel eyebrow="Работа" title="Задачи: план / факт" light>
 					<div className="tasks">
@@ -598,6 +602,7 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 				</Panel>
 			</div>
 
+			</>)}
 		</>
 	);
 }
