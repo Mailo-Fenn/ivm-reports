@@ -355,3 +355,8 @@ button { font-family: inherit; cursor: pointer; }
 .login-field span { display: block; font-size: 12px; font-weight: 700; color: var(--mut); margin-bottom: 6px; }
 .login-field .inp { width: 100%; }
 .login-err { background: rgba(165,48,59,.12); color: #A5303B; border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+
+/* подписи значений на столбиках: внутри всегда светлые, снаружи — под цвет панели */
+.chart .bar-label.in { fill: var(--creamTx); }
+.chart .bar-label.out { fill: var(--creamTx); }
+.panel.light .chart .bar-label.out { fill: var(--wine); }

@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, router } from '@inertiajs/react';
 import {
 	ResponsiveContainer, AreaChart, Area, BarChart, Bar, LineChart, Line,
-	XAxis, YAxis, CartesianGrid, Tooltip, Cell,
+	XAxis, YAxis, CartesianGrid, Tooltip, Cell, LabelList,
 } from 'recharts';
 import {
 	Users, Eye, Radar, Heart, Target, MousePointerClick, FileText, Film,
@@ -16,7 +16,24 @@ const K = { wine: '#4C181C', accent: '#A5303B', mut: '#7C6B60' };
 
 const fInt = (n) => Math.round(Number(n) || 0).toLocaleString('ru-RU');
 const pct = (n) => Math.round(Number(n) || 0) + '%';
-const kAxis = (v) => (Math.abs(v) >= 1000 ? (v / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 0 }) + 'к' : String(v));
+const kAxis = (v) => (Math.abs(v) >= 1000 ? (v / 1000).toLocaleString('ru-RU', { maximumFractionDigits: Math.abs(v) < 10000 ? 1 : 0 }) + 'к' : String(v));
+// подпись значения столбика: внутри у верхнего края, а если столбик слишком низкий — над ним
+function BarValue({ x, y, width, height, value, fmt }) {
+	if (!Number(value)) return null;
+	const inside = height >= 20;
+	return (
+		<text
+			className={'bar-label' + (inside ? ' in' : ' out')}
+			x={x + width / 2}
+			y={inside ? y + 14 : y - 5}
+			textAnchor="middle"
+			fontSize={11}
+			fontWeight={700}
+		>
+			{(fmt || fInt)(value)}
+		</text>
+	);
+}
 const erOf = (o) => (o && o.subs ? +((o.inter / o.subs) * 100).toFixed(1) : 0);
 const bizNum = (v) => Number(String(v ?? '').replace(/\s/g, '').replace(',', '.')) || 0;
 const bizRate = (biz, key, mult = 1) => {
@@ -133,6 +150,7 @@ function Bars({ data, dataKey, highlight, fmt }) {
 					<Tooltip content={<Tip fmt={fmt} />} cursor={{ fill: 'rgba(76,24,28,.06)' }} />
 					<Bar dataKey={dataKey} radius={[6, 6, 0, 0]} maxBarSize={40}>
 						{data.map((d, i) => <Cell key={i} fill={i === highlight ? K.accent : '#8A5157'} />)}
+						<LabelList dataKey={dataKey} content={<BarValue fmt={fmt} />} />
 					</Bar>
 				</BarChart>
 			</ResponsiveContainer>
