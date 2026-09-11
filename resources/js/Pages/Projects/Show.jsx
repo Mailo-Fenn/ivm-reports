@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useForm, router } from '@inertiajs/react';
-import { Plus, CalendarDays, Trash2 } from 'lucide-react';
+import { Plus, CalendarDays, Trash2, Send, Copy, ExternalLink, X } from 'lucide-react';
 import Layout from '../../Layout';
 import { fInt, fSigned, fPct } from '../../lib/ui';
 
@@ -12,6 +12,12 @@ export default function Show({ project, reports, tariffs = {}, share }) {
 	const ro = !!share;
 	const reportHref = (id) => (ro ? `/share/${share.token}/reports/${id}` : `/reports/${id}`);
 	const [copied, setCopied] = useState(false);
+	const [shareOpen, setShareOpen] = useState(false);
+	// «Отправить клиенту»: если ссылки ещё нет — выпускаем и сразу открываем окно с ней
+	const openShare = () => {
+		if (project.share_url) { setShareOpen(true); return; }
+		router.post(`/projects/${project.id}/share`, {}, { preserveScroll: true, onSuccess: () => setShareOpen(true) });
+	};
 	const copyShare = async () => {
 		try { await navigator.clipboard.writeText(project.share_url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* браузер без clipboard — поле можно выделить и скопировать вручную */ }
 	};
@@ -96,6 +102,9 @@ export default function Show({ project, reports, tariffs = {}, share }) {
 							Редактировать
 						</button>
 					)}
+					<button className="btn btn-accent" onClick={openShare}>
+						<Send size={16} /> Отправить клиенту
+					</button>
 					<button className="btn btn-primary" onClick={() => setOpen((v) => !v)}>
 						<Plus size={16} /> Новый отчёт (месяц)
 					</button>
@@ -301,23 +310,33 @@ export default function Show({ project, reports, tariffs = {}, share }) {
 				</div>
 			</div>
 
-			{!ro && (
-				<div className="card" style={{ marginTop: 16 }}>
-					<div className="card-title">Ссылка для клиента</div>
-					<p style={{ fontSize: 13, color: 'var(--mut)', margin: '8px 0 10px' }}>
-						По ссылке клиент видит проект и отчёты без входа и без возможности что-то менять: нет редактирования,
-						выгрузки презентации и подтягивания соцсетей. Перевыпуск делает старую ссылку недействительной.
-					</p>
-					{project.share_url ? (
-						<div className="form-row" style={{ flexWrap: 'wrap' }}>
-							<input className="inp" readOnly value={project.share_url} style={{ flex: 1, minWidth: 260 }} onFocus={(e) => e.target.select()} />
-							<button className="btn" onClick={copyShare}>{copied ? 'Скопировано' : 'Скопировать'}</button>
-							<button className="btn" onClick={() => { if (confirm('Перевыпустить ссылку? Старая перестанет работать.')) router.post(`/projects/${project.id}/share`); }}>Перевыпустить</button>
-							<button className="btn btn-danger" onClick={() => { if (confirm('Отключить ссылку для клиента?')) router.delete(`/projects/${project.id}/share`); }}>Отключить</button>
+			{!ro && shareOpen && project.share_url && (
+				<div className="modal-bg" onClick={() => setShareOpen(false)}>
+					<div className="modal" onClick={(e) => e.stopPropagation()}>
+						<div className="modal-head">
+							<div>
+								<div className="eyebrow">Клиенту</div>
+								<h2 className="modal-title">Ссылка на отчёты</h2>
+							</div>
+							<button className="ei-x" onClick={() => setShareOpen(false)}><X size={15} /></button>
 						</div>
-					) : (
-						<button className="btn btn-primary" onClick={() => router.post(`/projects/${project.id}/share`)}>Создать ссылку</button>
-					)}
+						<p style={{ fontSize: 13, color: 'var(--mut)', margin: '10px 0 12px' }}>
+							Клиент открывает проект и все отчёты без входа, только для просмотра: без редактирования,
+							выгрузки презентации и подтягивания соцсетей. Ссылка действует, пока вы её не отключите.
+						</p>
+						<div className="form-row">
+							<input className="inp" readOnly value={project.share_url} style={{ flex: 1, minWidth: 240 }} onFocus={(e) => e.target.select()} />
+							<button className="btn btn-primary" onClick={copyShare}><Copy size={15} /> {copied ? 'Скопировано' : 'Скопировать'}</button>
+							<a className="btn" href={project.share_url} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Открыть</a>
+						</div>
+						<div className="form-row" style={{ marginTop: 14, justifyContent: 'space-between' }}>
+							<span style={{ fontSize: 12, color: 'var(--mut)' }}>Перевыпуск делает старую ссылку недействительной.</span>
+							<span style={{ display: 'flex', gap: 6 }}>
+								<button className="btn btn-mini" onClick={() => { if (confirm('Перевыпустить ссылку? Старая перестанет работать.')) router.post(`/projects/${project.id}/share`, {}, { preserveScroll: true }); }}>Перевыпустить</button>
+								<button className="btn btn-mini btn-danger" onClick={() => { if (confirm('Отключить ссылку для клиента?')) router.delete(`/projects/${project.id}/share`, { preserveScroll: true, onSuccess: () => setShareOpen(false) }); }}>Отключить</button>
+							</span>
+						</div>
+					</div>
 				</div>
 			)}
 

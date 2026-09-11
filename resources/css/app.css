@@ -358,3 +358,10 @@ button { font-family: inherit; cursor: pointer; }
 .notes-col { min-width: 0; background: rgba(243,236,224,.05); border: 1px solid rgba(243,236,224,.12); border-radius: 14px; padding: 12px 14px; }
 .notes-inp { resize: vertical; min-height: 60px; line-height: 1.35; }
 @media (max-width: 900px) { .notes-cols { grid-template-columns: 1fr; } }
+
+/* ---------- модальное окно ---------- */
+.modal-bg { position: fixed; inset: 0; z-index: 50; background: rgba(51,22,26,.45); backdrop-filter: blur(3px); display: grid; place-items: center; padding: 20px; }
+.modal { width: 100%; max-width: 560px; background: var(--card); border: 1px solid var(--cardBd); border-radius: 20px; padding: 20px 22px; box-shadow: 0 20px 60px rgba(76,24,28,.3); }
+.modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.modal-title { font-family: 'Unbounded'; font-weight: 800; font-size: 20px; color: var(--wine); margin-top: 4px; }
+.modal .ei-x { background: rgba(178,58,44,.1); color: var(--red); }
