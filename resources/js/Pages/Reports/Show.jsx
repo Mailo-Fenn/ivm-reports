@@ -152,7 +152,7 @@ function Bars({ data, dataKey, highlight, fmt }) {
 					<XAxis dataKey="k" tick={AX} axisLine={false} tickLine={false} />
 					<YAxis tickFormatter={kAxis} tick={AX} axisLine={false} tickLine={false} width={38} />
 					<Tooltip content={<Tip fmt={fmt} />} cursor={{ fill: 'rgba(76,24,28,.06)' }} />
-					<Bar dataKey={dataKey} radius={[6, 6, 0, 0]} maxBarSize={40}>
+					<Bar dataKey={dataKey} radius={[6, 6, 0, 0]} maxBarSize={40} isAnimationActive={false}>
 						{data.map((d, i) => <Cell key={i} fill={i === highlight ? K.accent : '#8A5157'} />)}
 						<LabelList dataKey={dataKey} content={<BarValue fmt={fmt} />} />
 					</Bar>
@@ -165,7 +165,7 @@ function AreaOne({ data, dataKey }) {
 	return (
 		<div className="chart">
 			<ResponsiveContainer width="100%" height="100%">
-				<AreaChart data={data} margin={{ top: 14, right: 4, left: -12, bottom: 0 }}>
+				<AreaChart data={data} margin={{ top: 18, right: 22, left: -12, bottom: 0 }}>
 					<defs><linearGradient id={'g' + dataKey} x1="0" y1="0" x2="0" y2="1">
 						<stop offset="0%" stopColor={K.wine} stopOpacity={0.28} /><stop offset="100%" stopColor={K.wine} stopOpacity={0} />
 					</linearGradient></defs>
@@ -173,7 +173,9 @@ function AreaOne({ data, dataKey }) {
 					<XAxis dataKey="k" tick={AX} axisLine={false} tickLine={false} />
 					<YAxis tickFormatter={kAxis} tick={AX} axisLine={false} tickLine={false} width={38} />
 					<Tooltip content={<Tip />} />
-					<Area type="monotone" dataKey={dataKey} stroke={K.wine} strokeWidth={2.5} fill={'url(#g' + dataKey + ')'} />
+					<Area type="monotone" dataKey={dataKey} stroke={K.wine} strokeWidth={2.5} fill={'url(#g' + dataKey + ')'} dot={{ r: 3.5, fill: K.wine, strokeWidth: 0 }} activeDot={{ r: 5 }} isAnimationActive={false}>
+						<LabelList dataKey={dataKey} position="top" offset={9} formatter={(v) => (Number(v) ? fInt(v) : '')} className="pt-label" />
+					</Area>
 				</AreaChart>
 			</ResponsiveContainer>
 		</div>
@@ -183,12 +185,14 @@ function LineErr({ data }) {
 	return (
 		<div className="chart">
 			<ResponsiveContainer width="100%" height="100%">
-				<LineChart data={data} margin={{ top: 14, right: 4, left: -12, bottom: 0 }}>
+				<LineChart data={data} margin={{ top: 18, right: 22, left: -12, bottom: 0 }}>
 					<CartesianGrid vertical={false} stroke="#D2CAB8" />
 					<XAxis dataKey="k" tick={AX} axisLine={false} tickLine={false} />
 					<YAxis tickFormatter={(v) => v + '%'} tick={AX} axisLine={false} tickLine={false} width={38} />
 					<Tooltip content={<Tip fmt={(v) => v + '%'} />} />
-					<Line type="monotone" dataKey="er" stroke={K.accent} strokeWidth={2.5} dot={{ r: 3, fill: K.accent, strokeWidth: 0 }} />
+					<Line type="monotone" dataKey="er" stroke={K.accent} strokeWidth={2.5} dot={{ r: 3.5, fill: K.accent, strokeWidth: 0 }} activeDot={{ r: 5 }} isAnimationActive={false}>
+						<LabelList dataKey="er" position="top" offset={9} formatter={(v) => (Number(v) ? v + '%' : '')} className="pt-label" />
+					</Line>
 				</LineChart>
 			</ResponsiveContainer>
 		</div>
