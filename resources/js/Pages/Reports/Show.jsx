@@ -1060,92 +1060,6 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 				<div className="edit-section-head">
 					<span className="edit-num">5</span>
 					<div>
-						<div className="edit-section-title">Работа с сообществом</div>
-						<div className="edit-section-sub">Скриншоты и подписи по каждой площадке — попадут в отчёт и презентацию.</div>
-					</div>
-				</div>
-			<div className="platrorm-stat-wrapper">
-				{PLIST.map((p) => (
-					<details key={p} style={{ marginTop: 10 }} open={communityOf(p).length > 0}>
-						<summary className="edit-label" style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-							<span>Работа с сообществом · {platformNames[p]}{communityOf(p).length ? ` (${communityOf(p).length})` : ''}</span>
-							<button className="btn btn-mini" onClick={(e) => { e.preventDefault(); setCommunityFor(p, [...communityOf(p), { image: null, caption: '' }]); }}><Plus size={13} /></button>
-						</summary>
-						<div className="edit-grid" style={{ marginTop: 8 }}>
-							{communityOf(p).map((c, i) => (
-								<div key={i} style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr auto', gap: 6, alignItems: 'center' }}>
-									<input
-										id={`comm-file-${p}-${i}`}
-										type="file"
-										accept="image/*"
-										onChange={(e) => uploadCommunityImage(p, i, e.target.files[0])}
-										style={{ display: 'none' }}
-									/>
-
-									<label
-										htmlFor={`comm-file-${p}-${i}`}
-										style={{
-											display: 'inline-flex',
-											alignItems: 'center',
-											gap: 8,
-											padding: '10px 16px',
-											background: '#f0a29b24',
-											color: 'var(--redL)',
-											borderRadius: 8,
-											cursor: 'pointer',
-											fontSize: 14,
-											fontWeight: 500,
-											transition: 'background .2s'
-										}}
-									>
-										{c.image ? 'Заменить изображение' : 'Выбрать изображение'}
-									</label>
-
-									{c.image ? (
-										<img
-											src={`/storage/${c.image}`}
-											style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6 }}
-										/>
-									) : <span />}
-
-									<input className="ei ei-text" value={c.caption || ''} placeholder="Подпись к изображению" onChange={(e) => setCommunityFor(p, communityOf(p).map((x, j) => j === i ? { ...x, caption: e.target.value } : x))} />
-
-									<button className="ei-x" onClick={() => setCommunityFor(p, communityOf(p).filter((_, j) => j !== i))}><Trash2 size={13} /></button>
-								</div>
-							))}
-							{communityOf(p).length === 0 && <div style={{ fontSize: 12, color: 'var(--mut)' }}>Записей нет — добавьте кнопкой «+»</div>}
-						</div>
-					</details>
-				))}
-			</div>
-			</section>
-
-			<section className="edit-section">
-				<div className="edit-section-head">
-					<span className="edit-num">6</span>
-					<div>
-						<div className="edit-section-title">Результаты для бизнеса</div>
-						<div className="edit-section-sub">Цифры рекламы: цена перехода, подписчика и 1000 просмотров считаются автоматически.</div>
-					</div>
-				</div>
-			<div className="two">
-				<div>
-					<div className="edit-grid" style={{ marginTop: 8 }}>
-						{[['ad_clicks', 'Переходов с рекламы'], ['ad_subs', 'Подписчики с рекламы'], ['ad_views', 'Просмотры с рекламы'], ['ad_budget', 'Бюджет размещения, ₽']].map(([k, lbl]) => (
-							<div key={k} style={{ display: 'grid', gridTemplateColumns: '1fr .8fr', gap: 6, alignItems: 'center' }}>
-								<span style={{ fontSize: 13 }}>{lbl}</span>
-								<input className="ei" value={biz[k] ?? ''} onChange={(e) => setBiz({ ...biz, [k]: e.target.value })} />
-							</div>
-						))}
-					</div>
-				</div>
-			</div>
-			</section>
-
-			<section className="edit-section">
-				<div className="edit-section-head">
-					<span className="edit-num">7</span>
-					<div>
 						<div className="edit-section-title">Топ-контент</div>
 						<div className="edit-section-sub">Лучшие посты и сторис месяца с показателями — для слайдов «Посты» и «Сторис».</div>
 					</div>
@@ -1250,6 +1164,92 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 						<button className="ei-x" style={{ alignSelf: 'center' }} onClick={() => setCt(ct.filter((_, j) => j !== i))}><Trash2 size={13} /></button>
 					</div>
 				))}
+			</div>
+			</section>
+
+			<section className="edit-section">
+				<div className="edit-section-head">
+					<span className="edit-num">6</span>
+					<div>
+						<div className="edit-section-title">Работа с сообществом</div>
+						<div className="edit-section-sub">Скриншоты и подписи по каждой площадке — попадут в отчёт и презентацию.</div>
+					</div>
+				</div>
+			<div className="platrorm-stat-wrapper">
+				{PLIST.map((p) => (
+					<details key={p} style={{ marginTop: 10 }} open={communityOf(p).length > 0}>
+						<summary className="edit-label" style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+							<span>Работа с сообществом · {platformNames[p]}{communityOf(p).length ? ` (${communityOf(p).length})` : ''}</span>
+							<button className="btn btn-mini" onClick={(e) => { e.preventDefault(); setCommunityFor(p, [...communityOf(p), { image: null, caption: '' }]); }}><Plus size={13} /></button>
+						</summary>
+						<div className="edit-grid" style={{ marginTop: 8 }}>
+							{communityOf(p).map((c, i) => (
+								<div key={i} style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr auto', gap: 6, alignItems: 'center' }}>
+									<input
+										id={`comm-file-${p}-${i}`}
+										type="file"
+										accept="image/*"
+										onChange={(e) => uploadCommunityImage(p, i, e.target.files[0])}
+										style={{ display: 'none' }}
+									/>
+
+									<label
+										htmlFor={`comm-file-${p}-${i}`}
+										style={{
+											display: 'inline-flex',
+											alignItems: 'center',
+											gap: 8,
+											padding: '10px 16px',
+											background: '#f0a29b24',
+											color: 'var(--redL)',
+											borderRadius: 8,
+											cursor: 'pointer',
+											fontSize: 14,
+											fontWeight: 500,
+											transition: 'background .2s'
+										}}
+									>
+										{c.image ? 'Заменить изображение' : 'Выбрать изображение'}
+									</label>
+
+									{c.image ? (
+										<img
+											src={`/storage/${c.image}`}
+											style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6 }}
+										/>
+									) : <span />}
+
+									<input className="ei ei-text" value={c.caption || ''} placeholder="Подпись к изображению" onChange={(e) => setCommunityFor(p, communityOf(p).map((x, j) => j === i ? { ...x, caption: e.target.value } : x))} />
+
+									<button className="ei-x" onClick={() => setCommunityFor(p, communityOf(p).filter((_, j) => j !== i))}><Trash2 size={13} /></button>
+								</div>
+							))}
+							{communityOf(p).length === 0 && <div style={{ fontSize: 12, color: 'var(--mut)' }}>Записей нет — добавьте кнопкой «+»</div>}
+						</div>
+					</details>
+				))}
+			</div>
+			</section>
+
+			<section className="edit-section">
+				<div className="edit-section-head">
+					<span className="edit-num">7</span>
+					<div>
+						<div className="edit-section-title">Результаты для бизнеса</div>
+						<div className="edit-section-sub">Цифры рекламы: цена перехода, подписчика и 1000 просмотров считаются автоматически.</div>
+					</div>
+				</div>
+			<div className="two">
+				<div>
+					<div className="edit-grid" style={{ marginTop: 8 }}>
+						{[['ad_clicks', 'Переходов с рекламы'], ['ad_subs', 'Подписчики с рекламы'], ['ad_views', 'Просмотры с рекламы'], ['ad_budget', 'Бюджет размещения, ₽']].map(([k, lbl]) => (
+							<div key={k} style={{ display: 'grid', gridTemplateColumns: '1fr .8fr', gap: 6, alignItems: 'center' }}>
+								<span style={{ fontSize: 13 }}>{lbl}</span>
+								<input className="ei" value={biz[k] ?? ''} onChange={(e) => setBiz({ ...biz, [k]: e.target.value })} />
+							</div>
+						))}
+					</div>
+				</div>
 			</div>
 			</section>
 
