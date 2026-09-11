@@ -352,7 +352,7 @@ export default function Show({ project, report, reports, platformNames, current,
 	};
 
 	return (
-		<Layout crumbs={[{ label: project.name, href: `/projects/${project.id}` }, { label: report.period_label }]}>
+		<Layout crumbs={[{ label: project.name, href: `/projects/${project.id}` }, editing ? { label: report.period_label, href: `/reports/${report.id}` } : { label: report.period_label }, ...(editing ? [{ label: 'Редактирование' }] : [])]}>
 			<div className="page-head">
 				<div>
 					<div className="eyebrow">Отчёт по SMM · {project.name}</div>

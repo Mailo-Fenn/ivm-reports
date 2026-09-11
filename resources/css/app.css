@@ -30,17 +30,17 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---------- shell ---------- */
 .shell { min-height: 100vh; }
-.topbar { position: sticky; top: 0; z-index: 20; background: rgba(221,215,201,.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--cardBd); }
-.topbar-in { max-width: 1200px; margin: 0 auto; padding: 13px 26px; display: flex; align-items: center; gap: 16px; }
+.topbar { position: sticky; top: 0; z-index: 20; background: var(--wine); color: var(--creamTx); box-shadow: 0 6px 18px rgba(76,24,28,.22); }
+.topbar-in { max-width: 1200px; margin: 0 auto; padding: 13px 26px; display: flex; align-items: center; gap: 22px; }
 .logo { display: flex; align-items: center; gap: 11px; }
-.logo-bar { width: 3px; height: 36px; background: var(--accent); border-radius: 2px; }
-.logo-name { font-family: 'Unbounded'; font-weight: 800; font-size: 15px; letter-spacing: 1px; color: var(--wine); line-height: 1; display: block; }
-.logo-sub { font-size: 9px; font-weight: 700; letter-spacing: 3px; color: var(--mut); margin-top: 3px; }
+.logo-bar { width: 3px; height: 36px; background: var(--creamTx); border-radius: 2px; }
+.logo-name { font-family: 'Unbounded'; font-weight: 800; font-size: 15px; letter-spacing: 1px; color: var(--creamTx); line-height: 1; display: block; }
+.logo-sub { font-size: 9px; font-weight: 700; letter-spacing: 3px; color: var(--creamMut); margin-top: 3px; }
 .topbar-spacer { flex: 1; }
-.crumbs { display: flex; align-items: center; gap: 8px; color: var(--mut); font-size: 13px; font-weight: 600; }
-.crumbs a:hover { color: var(--wine); }
-.crumbs .sep { opacity: .5; }
-.crumbs .cur { color: var(--wine); }
+.crumbs { display: flex; align-items: center; gap: 8px; color: var(--creamMut); font-size: 13px; font-weight: 600; }
+.crumbs a:hover { color: var(--creamTx); }
+.crumbs .sep { opacity: .6; }
+.crumbs .cur { color: var(--creamTx); }
 .page { max-width: 1200px; margin: 0 auto; padding: 26px 26px 60px; }
 
 /* ---------- headings ---------- */
@@ -344,7 +344,7 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---- вход ---- */
 .crumbs button { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
-.crumbs button:hover { color: var(--wine); }
+.crumbs button:hover { color: var(--creamTx); }
 .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .login-card { width: 100%; max-width: 380px; }
 .login-field { display: block; margin-bottom: 12px; }

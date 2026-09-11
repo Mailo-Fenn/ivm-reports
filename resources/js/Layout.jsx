@@ -25,19 +25,19 @@ export default function Layout({ crumbs = [], children }) {
               <span className="logo-sub">В МАРКЕТИНГЕ</span>
             </span>
           </Link>
-          <div className="topbar-spacer" />
           <nav className="crumbs">
             <Link href="/projects">Проекты</Link>
             {crumbs.map((c, i) => (
               <React.Fragment key={i}>
-                <span className="sep">/</span>
+                <span className="sep">›</span>
                 {c.href ? <Link href={c.href}>{c.label}</Link> : <span className="cur">{c.label}</span>}
               </React.Fragment>
             ))}
           </nav>
-          <nav className="crumbs" style={{ marginLeft: 18 }}>
+          <div className="topbar-spacer" />
+          <nav className="crumbs">
             <Link href="/settings">Настройки</Link>
-            <span className="sep">/</span>
+            <span className="sep">·</span>
             <Link href="/logout" method="post" as="button" type="button">Выйти</Link>
           </nav>
         </div>
