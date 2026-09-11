@@ -352,3 +352,9 @@ button { font-family: inherit; cursor: pointer; }
 .edit-section-title { font-size: 16px; font-weight: 800; color: var(--creamTx); line-height: 1.2; }
 .edit-section-sub { font-size: 12px; color: var(--creamMut); margin-top: 3px; }
 .edit-section .platform-edit { margin-bottom: 0; }
+
+/* выводы по площадкам: три показателя — три колонки на всю ширину */
+.notes-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 12px; }
+.notes-col { min-width: 0; background: rgba(243,236,224,.05); border: 1px solid rgba(243,236,224,.12); border-radius: 14px; padding: 12px 14px; }
+.notes-inp { resize: vertical; min-height: 60px; line-height: 1.35; }
+@media (max-width: 900px) { .notes-cols { grid-template-columns: 1fr; } }

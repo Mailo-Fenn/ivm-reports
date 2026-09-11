@@ -1025,7 +1025,7 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 						<summary className="edit-label" style={{ cursor: 'pointer' }}>
 							Выводы · {platformNames[platform]}
 						</summary>
-						<div style={{ marginTop: 12, display: 'grid', gap: 14 }}>
+						<div className="notes-cols">
 							{[['subs', 'Подписчики'], ['views', 'Просмотры'], ['inter', 'Взаимодействия']].map(([mk, label]) => {
 								const list = mn[platform]?.[mk] || [];
 								const setList = (nl) => setMn({ ...mn, [platform]: { ...(mn[platform] || {}), [mk]: nl } });
@@ -1033,18 +1033,19 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 								const prevVal = previous?.stats?.[platform]?.[mk];
 								const diff = prevVal === null || prevVal === undefined ? null : (Number(pf[platform]?.[mk]) || 0) - Number(prevVal);
 								return (
-									<div key={mk}>
+									<div key={mk} className="notes-col">
 										<div className="edit-label" style={{ fontSize: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 											<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{label} <Delta diff={diff} /></span>
 											<button className="btn btn-mini" onClick={() => setList([...list, ''])}><Plus size={13} /></button>
 										</div>
-										<div className="edit-grid" style={{ marginTop: 6 }}>
+										<div className="edit-grid" style={{ marginTop: 8 }}>
 											{list.map((v, i) => (
-												<div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 6 }}>
-													<input className="ei ei-text" value={v} placeholder="Текст вывода для презентации" onChange={(e) => setList(list.map((x, j) => j === i ? e.target.value : x))} />
+												<div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 6, alignItems: 'start' }}>
+													<textarea className="ei ei-text notes-inp" rows={2} value={v} placeholder="Текст вывода для презентации" onChange={(e) => setList(list.map((x, j) => j === i ? e.target.value : x))} />
 													<button className="ei-x" onClick={() => setList(list.filter((_, j) => j !== i))}><Trash2 size={13} /></button>
 												</div>
 											))}
+											{list.length === 0 && <div style={{ fontSize: 12, color: 'var(--creamMut)' }}>Выводов нет — добавьте кнопкой «+»</div>}
 										</div>
 									</div>
 								);
