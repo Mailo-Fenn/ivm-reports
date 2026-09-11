@@ -29,6 +29,9 @@ class ProjectController extends Controller
                     'reports_count' => $p->reports_count,
                     'last_period'   => $last?->period_label,
                     'last_totals'   => $last?->totals,
+                    'manager'       => $p->manager,
+                    'client_period' => $p->client_period,
+                    'tariff_name'   => config('tariffs.list.'.$p->tariff.'.name'),
                     'is_active' => $p->is_active,
                 ];
             });

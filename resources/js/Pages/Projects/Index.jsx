@@ -98,26 +98,11 @@ export default function Index({ projects }) {
 						<Link key={p.id} href={`/projects/${p.id}`} className="card">
 							<div className="card-accent" style={{ background: p.color }} />
 							<div className="card-title">{p.name}</div>
-							<div className="card-meta">
-								{p.reports_count} {plural(p.reports_count, 'отчёт', 'отчёта', 'отчётов')}
-								{p.last_period ? ` · последний: ${p.last_period}` : ''}
+							<div className="card-rows">
+								<div><span>Ответственный</span><b>{p.manager || '—'}</b></div>
+								<div><span>Период ведения</span><b>{p.client_period || '—'}</b></div>
+								<div><span>Тариф</span><b>{p.tariff_name || '—'}</b></div>
 							</div>
-							{p.last_totals && (
-								<div className="card-stats">
-									<div className="card-stat">
-										<b>{fInt(p.last_totals.reach)}</b>
-										<span>Охваты</span>
-									</div>
-									<div className="card-stat">
-										<b>{fInt(p.last_totals.leads)}</b>
-										<span>Заявки</span>
-									</div>
-									<div className="card-stat">
-										<b>{fPct(p.last_totals.er)}</b>
-										<span>ER</span>
-									</div>
-								</div>
-							)}
 						</Link>
 					))}
 				</div>
