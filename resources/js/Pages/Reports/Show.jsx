@@ -761,6 +761,8 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 	// вкладка площадки в понедельной статистике; если площадку выключили — уходим на первую включённую
 	const [wkTab, setWkTab] = useState(null);
 	const wkPlat = PLIST.includes(wkTab) ? wkTab : PLIST[0];
+	const [mnTab, setMnTab] = useState(null);
+	const mnPlat = PLIST.includes(mnTab) ? mnTab : PLIST[0];
 
 	const weekStats = {};
 
@@ -1019,19 +1021,19 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 						<div className="edit-section-sub">Текст для слайдов презентации: по 1–3 вывода на каждый показатель.</div>
 					</div>
 				</div>
-			<div className='platrorm-stat-wrapper'>
-				{PLIST.map(platform => (
-					<details key={platform} style={{ marginTop: 10 }}>
-						<summary className="edit-label" style={{ cursor: 'pointer' }}>
-							Выводы · {platformNames[platform]}
-						</summary>
+			<div className="wk-tabs">
+				{PLIST.map((p) => (
+					<button key={p} type="button" className={'tab' + (mnPlat === p ? ' on' : '')} onClick={() => setMnTab(p)}>{platformNames[p]}</button>
+				))}
+			</div>
+			{mnPlat && (
 						<div className="notes-cols">
 							{[['subs', 'Подписчики'], ['views', 'Просмотры'], ['inter', 'Взаимодействия']].map(([mk, label]) => {
-								const list = mn[platform]?.[mk] || [];
-								const setList = (nl) => setMn({ ...mn, [platform]: { ...(mn[platform] || {}), [mk]: nl } });
+								const list = mn[mnPlat]?.[mk] || [];
+								const setList = (nl) => setMn({ ...mn, [mnPlat]: { ...(mn[mnPlat] || {}), [mk]: nl } });
 								// динамика к прошлому месяцу — подсказка при написании вывода
-								const prevVal = previous?.stats?.[platform]?.[mk];
-								const diff = prevVal === null || prevVal === undefined ? null : (Number(pf[platform]?.[mk]) || 0) - Number(prevVal);
+								const prevVal = previous?.stats?.[mnPlat]?.[mk];
+								const diff = prevVal === null || prevVal === undefined ? null : (Number(pf[mnPlat]?.[mk]) || 0) - Number(prevVal);
 								return (
 									<div key={mk} className="notes-col">
 										<div className="edit-label" style={{ fontSize: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1051,9 +1053,7 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 								);
 							})}
 						</div>
-					</details>
-				))}
-			</div>
+			)}
 			</section>
 
 			<section className="edit-section">
