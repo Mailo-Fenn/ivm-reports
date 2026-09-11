@@ -153,10 +153,16 @@ button { font-family: inherit; cursor: pointer; }
 .task-s.warn { color:#A5303B; }
 
 /* ---------- business / conclusions / plan ---------- */
-.biz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.biz { background: var(--bg); border: 1px solid var(--cardBd); border-radius: 14px; padding: 14px 15px; }
-.biz-v { font-family: 'Unbounded'; font-weight: 700; font-size: 22px; color: var(--wine); }
-.biz-l { font-size: 11.5px; color: var(--mut); font-weight: 600; margin-top: 5px; }
+.biz-key { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.biz-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.biz { display: flex; align-items: center; gap: 12px; background: var(--bg); border: 1px solid var(--cardBd); border-radius: 14px; padding: 14px 15px; }
+.biz-ico { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: rgba(76,24,28,.08); color: var(--accent); }
+.biz-v { font-family: 'Unbounded'; font-weight: 700; font-size: 20px; color: var(--wine); line-height: 1.1; }
+.biz-l { font-size: 11.5px; color: var(--mut); font-weight: 600; margin-top: 4px; }
+.biz-accent { background: var(--wine); border-color: var(--wine); padding: 18px 20px; }
+.biz-accent .biz-ico { background: rgba(243,236,224,.14); color: var(--creamTx); }
+.biz-accent .biz-v { color: var(--creamTx); font-size: 24px; }
+.biz-accent .biz-l { color: var(--creamMut); }
 .concl { padding: 10px 0; border-bottom: 1px solid var(--cardBd); }
 .concl:last-child { border-bottom: none; }
 .concl-h { font-size: 14px; font-weight: 800; color: var(--ink); }
@@ -228,7 +234,7 @@ button { font-family: inherit; cursor: pointer; }
 
 @media (max-width: 900px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .two, .plat-grid, .biz-grid, .reels { grid-template-columns: 1fr; }
+  .two, .plat-grid, .biz-grid, .biz-key, .reels { grid-template-columns: 1fr; }
   .grid-cards { grid-template-columns: 1fr; }
   .page-title { font-size: 24px; }
   .tab-note { width: 100%; margin-left: 0; }

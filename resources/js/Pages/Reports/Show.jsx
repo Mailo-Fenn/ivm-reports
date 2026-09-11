@@ -9,6 +9,7 @@ import {
 	Users, Eye, Radar, Heart, Target, MousePointerClick, FileText, Film,
 	TrendingUp, TrendingDown, Minus, ArrowRight, LayoutGrid, Pencil, Check, X,
 	FileDown, Trash2, Plus, RefreshCw,
+	Globe, UserRound, Link2, Wallet, Tag, BarChart3,
 } from 'lucide-react';
 import Layout from '../../Layout';
 
@@ -445,6 +446,19 @@ export default function Show({ project, report, reports, platformNames, current,
 	);
 }
 
+// карточка блока «Результаты»: акцентная (винная) для ключевых цифр и светлая для остальных
+function BizCard({ icon: Ico, value, label, accent }) {
+	return (
+		<div className={'biz' + (accent ? ' biz-accent' : '')}>
+			<span className="biz-ico"><Ico size={16} /></span>
+			<div>
+				<div className="biz-v">{value}</div>
+				<div className="biz-l">{label}</div>
+			</div>
+		</div>
+	);
+}
+
 function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks, biz, summary, plan, community, setView, PLIST }) {
 	const kpis = [
 		{ key: 'subs', label: 'База подписчиков', val: curTot.subs, prev: prevTot?.subs, icon: Users },
@@ -532,15 +546,17 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 					</div>
 				</Panel>
 				<Panel eyebrow="Бизнес" title="Результаты" light>
+					<div className="biz-key">
+						<BizCard accent icon={Globe} value={biz.ad_clicks ? fInt(biz.ad_clicks) : '—'} label="Переходы с рекламы" />
+						<BizCard accent icon={UserRound} value={biz.ad_subs ? fInt(biz.ad_subs) : '—'} label="Подписчики с рекламы" />
+					</div>
 					<div className="biz-grid">
-						<div className="biz"><div className="biz-v">{fInt(curTot.leads)}</div><div className="biz-l">переходы на сайт</div></div>
-						<div className="biz"><div className="biz-v">{biz.ad_budget ? fInt(biz.ad_budget) + ' ₽' : '—'}</div><div className="biz-l">бюджет рекламы</div></div>
-						<div className="biz"><div className="biz-v">{biz.ad_clicks ? fInt(biz.ad_clicks) : '—'}</div><div className="biz-l">переходы с рекламы</div></div>
-						<div className="biz"><div className="biz-v">{bizRateFmt(biz, 'ad_clicks')}</div><div className="biz-l">цена перехода</div></div>
-						<div className="biz"><div className="biz-v">{biz.ad_subs ? fInt(biz.ad_subs) : '—'}</div><div className="biz-l">подписчики с рекламы</div></div>
-						<div className="biz"><div className="biz-v">{bizRateFmt(biz, 'ad_subs')}</div><div className="biz-l">цена подписчика</div></div>
-						<div className="biz"><div className="biz-v">{biz.ad_views ? fInt(biz.ad_views) : '—'}</div><div className="biz-l">просмотры с рекламы</div></div>
-						<div className="biz"><div className="biz-v">{bizRateFmt(biz, 'ad_views', 1000)}</div><div className="biz-l">цена 1000 просмотров</div></div>
+						<BizCard icon={Link2} value={fInt(curTot.leads)} label="Переходы на сайт" />
+						<BizCard icon={Eye} value={biz.ad_views ? fInt(biz.ad_views) : '—'} label="Просмотры с рекламы" />
+						<BizCard icon={Wallet} value={biz.ad_budget ? fInt(biz.ad_budget) + ' ₽' : '—'} label="Бюджет рекламы" />
+						<BizCard icon={Tag} value={bizRateFmt(biz, 'ad_clicks')} label="Цена перехода" />
+						<BizCard icon={Tag} value={bizRateFmt(biz, 'ad_subs')} label="Цена подписчика" />
+						<BizCard icon={BarChart3} value={bizRateFmt(biz, 'ad_views', 1000)} label="Цена 1000 просмотров" />
 					</div>
 				</Panel>
 			</div>
@@ -637,7 +653,7 @@ function PlatformView({ pid, platformNames, stats, previous, liveSeries, content
 										<div className="post-title">{c.title}</div>
 										{c.image && (
 											<img
-												src={`/storage/app/public/${c.image}`}
+												src={`/storage/${c.image}`}
 												alt={c.title}
 												className="content-image"
 											/>
