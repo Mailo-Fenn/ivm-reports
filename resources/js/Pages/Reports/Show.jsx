@@ -772,6 +772,14 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 
 	return (
 		<Panel eyebrow="Редактирование" title="Данные отчёта">
+			<section className="edit-section">
+				<div className="edit-section-head">
+					<span className="edit-num">1</span>
+					<div>
+						<div className="edit-section-title">Площадки клиента</div>
+						<div className="edit-section-sub">Включите соцсети, по которым ведёте клиента. Выключенные в отчёт и презентацию не попадут; выбор сохраняется вместе с отчётом.</div>
+					</div>
+				</div>
 			<div className="platform-edit">
 				{Object.keys(current).map((key) => (
 					<label key={key} className={'platform-toggle' + (pf[key]?.is_enabled ? ' on' : '')}>
@@ -783,10 +791,16 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 					</label>
 				))}
 			</div>
-			<div style={{ fontSize: 12, color: 'var(--creamMut)', margin: '-6px 0 16px' }}>
-				Выключенные площадки не показываются в отчёте и презентации. Выбор сохраняется вместе с отчётом.
-			</div>
+			</section>
 
+			<section className="edit-section">
+				<div className="edit-section-head">
+					<span className="edit-num">2</span>
+					<div>
+						<div className="edit-section-title">Задачи и чек-лист</div>
+						<div className="edit-section-sub">План/факт показывают клиенту объём работы. Отметьте выполненные пункты чек-листа.</div>
+					</div>
+				</div>
 			<div className='two'>
 				<div>
 					<div className="edit-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -894,11 +908,16 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 					</div>
 				</div>
 			</div>
+			</section>
 
-			<div className="edit-label" style={{ marginTop: 18 }}>Понедельная статистика</div>
-			<div style={{ fontSize: 12, color: 'var(--creamMut)', margin: '4px 0 10px' }}>
-				Внесите цифры из статистики сообщества за каждую неделю. Пустые поля можно оставить нулями.
-			</div>
+			<section className="edit-section">
+				<div className="edit-section-head">
+					<span className="edit-num">3</span>
+					<div>
+						<div className="edit-section-title">Понедельная статистика</div>
+						<div className="edit-section-sub">Внесите цифры из статистики сообщества за каждую неделю. Пустые поля можно оставить нулями.</div>
+					</div>
+				</div>
 			<div className="wk-tabs">
 				{PLIST.map((p) => (
 					<button key={p} type="button" className={'tab' + (wkPlat === p ? ' on' : '')} onClick={() => setWkTab(p)}>{platformNames[p]}</button>
@@ -990,8 +1009,16 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 					</tbody>
 				</table>
 			</div>
+			</section>
 
-			<div className="edit-label" style={{ marginTop: 14 }}>Выводы по площадкам (текст для слайдов презентации)</div>
+			<section className="edit-section">
+				<div className="edit-section-head">
+					<span className="edit-num">4</span>
+					<div>
+						<div className="edit-section-title">Выводы по площадкам</div>
+						<div className="edit-section-sub">Текст для слайдов презентации: по 1–3 вывода на каждый показатель.</div>
+					</div>
+				</div>
 			<div className='platrorm-stat-wrapper'>
 				{PLIST.map(platform => (
 					<details key={platform} style={{ marginTop: 10 }}>
@@ -1026,8 +1053,16 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 					</details>
 				))}
 			</div>
+			</section>
 
-			<div className="edit-label" style={{ marginTop: 14 }}>Работа с сообществом (по площадкам)</div>
+			<section className="edit-section">
+				<div className="edit-section-head">
+					<span className="edit-num">5</span>
+					<div>
+						<div className="edit-section-title">Работа с сообществом</div>
+						<div className="edit-section-sub">Скриншоты и подписи по каждой площадке — попадут в отчёт и презентацию.</div>
+					</div>
+				</div>
 			<div className="platrorm-stat-wrapper">
 				{PLIST.map((p) => (
 					<details key={p} style={{ marginTop: 10 }} open={communityOf(p).length > 0}>
@@ -1082,10 +1117,18 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 					</details>
 				))}
 			</div>
+			</section>
 
-			<div className="two" style={{ marginTop: 18 }}>
+			<section className="edit-section">
+				<div className="edit-section-head">
+					<span className="edit-num">6</span>
+					<div>
+						<div className="edit-section-title">Результаты для бизнеса</div>
+						<div className="edit-section-sub">Цифры рекламы: цена перехода, подписчика и 1000 просмотров считаются автоматически.</div>
+					</div>
+				</div>
+			<div className="two">
 				<div>
-					<div className="edit-label">Результаты для бизнеса</div>
 					<div className="edit-grid" style={{ marginTop: 8 }}>
 						{[['ad_clicks', 'Переходов с рекламы'], ['ad_subs', 'Подписчики с рекламы'], ['ad_views', 'Просмотры с рекламы'], ['ad_budget', 'Бюджет размещения, ₽']].map(([k, lbl]) => (
 							<div key={k} style={{ display: 'grid', gridTemplateColumns: '1fr .8fr', gap: 6, alignItems: 'center' }}>
@@ -1096,8 +1139,17 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 					</div>
 				</div>
 			</div>
+			</section>
 
-			<div className="edit-label" style={{ marginTop: 18, display: 'flex', justifyContent: 'space-between' }}>
+			<section className="edit-section">
+				<div className="edit-section-head">
+					<span className="edit-num">7</span>
+					<div>
+						<div className="edit-section-title">Топ-контент</div>
+						<div className="edit-section-sub">Лучшие посты и сторис месяца с показателями — для слайдов «Посты» и «Сторис».</div>
+					</div>
+				</div>
+			<div className="edit-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
 				<span>Топ-контент (посты / сторис)</span>
 				<button className="btn btn-mini" onClick={() => setCt([...ct, { platform: 'vk', kind: 'post', title: '', views: 0, reactions: 0, comments: 0, reposts: 0, insight: '' }])}><Plus size={13} /></button>
 			</div>
@@ -1198,8 +1250,17 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 					</div>
 				))}
 			</div>
+			</section>
 
-			<div className="two" style={{ marginTop: 18 }}>
+			<section className="edit-section">
+				<div className="edit-section-head">
+					<span className="edit-num">8</span>
+					<div>
+						<div className="edit-section-title">Итоги и план</div>
+						<div className="edit-section-sub">Выводы месяца и план на следующий — попадут на финальные слайды презентации.</div>
+					</div>
+				</div>
+			<div className="two">
 				<div>
 					<div className="edit-label">Выводы месяца</div>
 					<textarea className="summary-inp" rows={4} value={summary} onChange={(e) => setSummary(e.target.value)} style={{ marginTop: 8 }} />
@@ -1209,6 +1270,7 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 					<textarea className="summary-inp" rows={4} value={plan} onChange={(e) => setPlan(e.target.value)} style={{ marginTop: 8 }} />
 				</div>
 			</div>
+			</section>
 		</Panel>
 	);
 }
