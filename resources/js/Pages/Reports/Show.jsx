@@ -758,6 +758,10 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 		}
 	};
 
+	// вкладка площадки в понедельной статистике; если площадку выключили — уходим на первую включённую
+	const [wkTab, setWkTab] = useState(null);
+	const wkPlat = PLIST.includes(wkTab) ? wkTab : PLIST[0];
+
 	const weekStats = {};
 
 	PLIST.forEach(platform => {
@@ -891,113 +895,70 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 				</div>
 			</div>
 
-			<div className='platrorm-stat-wrapper'>
-				{PLIST.map(platform => (
-					<details
-						key={platform}
-						style={{ marginTop: 18 }}
-					>
-						<summary
-							className="edit-label"
-							style={{ cursor: 'pointer' }}
-						>
-							Понедельная статистика · {platformNames[platform]}
-						</summary>
-
-
-						<div
-							className="wtable"
-							style={{ marginTop: 20 }}
-						>
-
-							<table>
-
-								<thead>
-									<tr>
-										<th>Неделя</th>
-										<th title="Общее число подписчиков на конец недели; в итог месяца идёт последняя заполненная неделя">Подписчики (всего)</th>
-										<th>Просмотры</th>
-										<th>Охваты</th>
-										<th>Взаим.</th>
-										<th>Заявки</th>
-										<th>Посты</th>
-										<th>Сторис</th>
-									</tr>
-								</thead>
-
-
-								<tbody>
-
-									{weekStats[platform].map((w, wi) => (
-
-										<tr key={w.id ?? `new-${wi}`}>
-
-											<td>
-												<input
-													className="ei ei-text"
-													value={w.label}
-													onChange={(e) =>
-														setWk(
-															wk.map(item =>
-																item === w
-																	? {
-																		...item,
-																		label: e.target.value
-																	}
-																	: item
-															)
-														)
-													}
-												/>
-											</td>
-
-
-											{[
-												'subs',
-												'views',
-												'reach',
-												'inter',
-												'leads',
-												'posts',
-												'stories'
-											].map(key => (
-
-												<td key={key}>
-
-													<input
-														className="ei"
-														type="number"
-														value={w[key] ?? 0}
-														onChange={(e) =>
-															setWk(
-																wk.map(item =>
-																	item === w
-																		? {
-																			...item,
-																			[key]: num(e)
-																		}
-																		: item
-																)
-															)
-														}
-													/>
-
-												</td>
-
-											))}
-
-										</tr>
-
-									))}
-
-								</tbody>
-
-							</table>
-
-						</div>
-
-					</details>
+			<div className="edit-label" style={{ marginTop: 18 }}>Понедельная статистика</div>
+			<div style={{ fontSize: 12, color: 'var(--creamMut)', margin: '4px 0 10px' }}>
+				Внесите цифры из статистики сообщества за каждую неделю. Пустые поля можно оставить нулями.
+			</div>
+			<div className="wk-tabs">
+				{PLIST.map((p) => (
+					<button key={p} type="button" className={'tab' + (wkPlat === p ? ' on' : '')} onClick={() => setWkTab(p)}>{platformNames[p]}</button>
 				))}
+			</div>
+			{wkPlat && (() => {
+				const rows = weekStats[wkPlat] || [];
+				const sum = (k) => rows.reduce((a, w) => a + (Number(w[k]) || 0), 0);
+				// подписчики — общее число на конец недели: итог месяца — последняя заполненная неделя
+				const lastSubs = [...rows].filter((w) => Number(w.subs)).sort((a, b) => (a.position || 0) - (b.position || 0)).pop();
+				const subsTotal = lastSubs ? Number(lastSubs.subs) : 0;
+				const erFmt = (inter, subs) => (Number(subs) ? (+((Number(inter) || 0) / Number(subs) * 100).toFixed(1)).toLocaleString('ru-RU') + '%' : '—');
+				const setField = (w, key, val) => setWk(wk.map((item) => (item === w ? { ...item, [key]: val } : item)));
+				return (
+					<div className="wtable wk-table">
+						<table>
+							<thead>
+								<tr>
+									<th>Неделя</th>
+									<th><span className="th-hint" title="Общее число подписчиков на конец недели">Подписчики <i>?</i></span></th>
+									<th>Просмотры</th>
+									<th>Охваты</th>
+									<th><span className="th-hint" title="Лайки + комментарии + репосты">Взаимо&shy;действия <i>?</i></span></th>
+									<th>Заявки</th>
+									<th>Посты</th>
+									<th>Сторис</th>
+									<th>ER % <em>авто</em></th>
+								</tr>
+							</thead>
+							<tbody>
+								{rows.map((w, wi) => (
+									<tr key={w.id ?? `new-${wi}`}>
+										<td><input className="ei ei-text wk-label" value={w.label} onChange={(e) => setField(w, 'label', e.target.value)} /></td>
+										{statKeys.map((key) => (
+											<td key={key}><input className="ei" type="number" value={w[key] ?? 0} onChange={(e) => setField(w, key, num(e))} /></td>
+										))}
+										<td><span className="er-pill">{erFmt(w.inter, w.subs)}</span></td>
+									</tr>
+								))}
+							</tbody>
+							<tfoot>
+								<tr className="wk-total">
+									<td>Итого за месяц</td>
+									<td>{fInt(subsTotal)}</td>
+									<td>{fInt(sum('views'))}</td>
+									<td>{fInt(sum('reach'))}</td>
+									<td>{fInt(sum('inter'))}</td>
+									<td>{fInt(sum('leads'))}</td>
+									<td>{fInt(sum('posts'))}</td>
+									<td>{fInt(sum('stories'))}</td>
+									<td>{erFmt(sum('inter'), subsTotal)}</td>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
+				);
+			})()}
+			<div style={{ fontSize: 11.5, color: 'var(--creamMut)', margin: '8px 0 18px' }}>
+				? Взаимодействия = лайки + комментарии + репосты. Подписчики — общее число на конец недели, в итог месяца идёт последняя заполненная неделя.
+				ER = взаимодействия / подписчики. ER и «Итого за месяц» считаются автоматически.
 			</div>
 
 			<div className="edit-label">

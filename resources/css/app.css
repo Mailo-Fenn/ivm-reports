@@ -325,3 +325,22 @@ button { font-family: inherit; cursor: pointer; }
 /* подписи точек на линейных графиках */
 .chart .pt-label { fill: var(--wine); font-size: 11px; font-weight: 700; }
 .chart svg { overflow: visible; }
+
+/* ---------- понедельная статистика в редакторе ---------- */
+.wk-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.wk-tabs .tab { color: var(--creamTx); border-color: rgba(243,236,224,.25); padding: 7px 13px; font-size: 12.5px; }
+.wk-tabs .tab:hover { border-color: var(--creamTx); }
+.wk-tabs .tab.on { background: var(--creamTx); color: var(--wine); border-color: var(--creamTx); }
+.wk-table table { min-width: 760px; }
+.wk-table th, .wk-table td { text-align: center; }
+.wk-table th:first-child, .wk-table td:first-child { text-align: left; }
+.wk-table th { text-transform: uppercase; letter-spacing: .04em; vertical-align: bottom; line-height: 1.2; }
+.wk-table .ei { text-align: center; min-width: 58px; }
+.wk-table .wk-label { min-width: 92px; text-align: left; }
+.th-hint { white-space: nowrap; }
+.th-hint i { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: rgba(243,236,224,.18); font-style: normal; font-size: 9px; margin-left: 2px; cursor: help; vertical-align: 1px; }
+.wk-table th em { font-style: normal; font-size: 9px; color: var(--redL); margin-left: 4px; }
+.er-pill { display: inline-block; min-width: 58px; padding: 7px 8px; border-radius: 8px; background: rgba(243,236,224,.1); font-weight: 700; }
+.wk-total td { background: rgba(243,236,224,.08); font-weight: 800; border-bottom: none; padding: 11px 8px; }
+.wk-total td:first-child { border-radius: 10px 0 0 10px; }
+.wk-total td:last-child { border-radius: 0 10px 10px 0; }
