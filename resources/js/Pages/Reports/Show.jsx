@@ -918,10 +918,10 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 							<thead>
 								<tr>
 									<th>Неделя</th>
-									<th><span className="th-hint" title="Общее число подписчиков на конец недели">Подписчики <i>?</i></span></th>
+									<th>Подписчики</th>
 									<th>Просмотры</th>
 									<th>Охваты</th>
-									<th><span className="th-hint" title="Лайки + комментарии + репосты">Взаимо&shy;действия <i>?</i></span></th>
+									<th>Взаимо&shy;действия</th>
 									<th>Заявки</th>
 									<th>Посты</th>
 									<th>Сторис</th>
@@ -956,10 +956,7 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 					</div>
 				);
 			})()}
-			<div style={{ fontSize: 11.5, color: 'var(--creamMut)', margin: '8px 0 18px' }}>
-				? Взаимодействия = лайки + комментарии + репосты. Подписчики — общее число на конец недели, в итог месяца идёт последняя заполненная неделя.
-				ER = взаимодействия / подписчики. ER и «Итого за месяц» считаются автоматически.
-			</div>
+			<div style={{ height: 18 }} />
 
 			<div className="edit-label">
 				Показатели по площадкам (рассчитано по неделям)
