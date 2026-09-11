@@ -81,8 +81,8 @@ class Report extends Model
             'posts' => $sum('posts'),
             'stories' => $sum('stories'),
 
-            'er' => $reach
-                ? round($inter / $reach * 100, 1)
+            'er' => $subs
+                ? round($inter / $subs * 100, 1)
                 : 0,
         ];
     }
@@ -99,10 +99,10 @@ class Report extends Model
 
             $reach = $items->sum('reach');
             $inter = $items->sum('inter');
-
+            $subs = self::subsFromWeeks($items);
 
             $result[$platform] = [
-                'subs' => self::subsFromWeeks($items),
+                'subs' => $subs,
                 'views' => (int)$items->sum('views'),
                 'reach' => (int)$reach,
                 'inter' => (int)$inter,
@@ -110,9 +110,8 @@ class Report extends Model
                 'posts' => (int)$items->sum('posts'),
                 'stories' => (int)$items->sum('stories'),
 
-                'er' => $reach
-                    ? round($inter / $reach * 100, 1)
-                    : 0,
+                // ER везде считаем от базы подписчиков: взаимодействия / подписчики
+                'er' => $subs ? round($inter / $subs * 100, 1) : 0,
             ];
         }
 
@@ -131,7 +130,7 @@ class Report extends Model
                 'leads' => (int)$ps->leads,
                 'posts' => (int)$ps->posts,
                 'stories' => (int)$ps->stories,
-                'er' => $ps->reach ? round($ps->inter / $ps->reach * 100, 1) : 0,
+                'er' => $ps->er,
             ];
         }
 

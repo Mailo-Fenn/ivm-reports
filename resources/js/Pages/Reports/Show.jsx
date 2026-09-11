@@ -259,7 +259,9 @@ export default function Show({ project, report, reports, platformNames, current,
 
 	const total = (obj) => {
 		const sum = (k) => PLIST.reduce((a, p) => a + (Number(obj[p]?.[k]) || 0), 0);
-		return { subs: sum('subs'), views: sum('views'), reach: sum('reach'), inter: sum('inter'), leads: obj.vk?.leads || 0, erVk: erOf(obj.vk) };
+		// обзор — суммы по всем площадкам; общий ER = взаимодействия / подписчики
+		const subs = sum('subs'), inter = sum('inter');
+		return { subs, views: sum('views'), reach: sum('reach'), inter, leads: sum('leads'), er: subs ? +((inter / subs) * 100).toFixed(1) : 0 };
 	};
 	const curTot = useMemo(
 		() => total(stats),
@@ -431,8 +433,8 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 		{ key: 'views', label: 'Просмотры · все площадки', val: curTot.views, prev: prevTot?.views, icon: Eye },
 		{ key: 'reach', label: 'Охват · все площадки', val: curTot.reach, prev: prevTot?.reach, icon: Radar },
 		{ key: 'inter', label: 'Взаимодействия', val: curTot.inter, prev: prevTot?.inter, icon: Heart },
-		{ key: 'er', label: 'ER ВКонтакте', val: curTot.erVk, prev: prevTot?.erVk, icon: Target, pp: true, pct: true },
-		{ key: 'leads', label: 'Переходы на сайт (ВК)', val: curTot.leads, prev: prevTot?.leads, icon: MousePointerClick },
+		{ key: 'er', label: 'ER · все площадки', val: curTot.er, prev: prevTot?.er, icon: Target, pp: true, pct: true },
+		{ key: 'leads', label: 'Переходы на сайт', val: curTot.leads, prev: prevTot?.leads, icon: MousePointerClick },
 	];
 
 	console.log(curTot)
@@ -513,7 +515,7 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 				</Panel>
 				<Panel eyebrow="Бизнес" title="Результаты" light>
 					<div className="biz-grid">
-						<div className="biz"><div className="biz-v">{fInt(stats.vk?.leads || 0)}</div><div className="biz-l">переходы на сайт</div></div>
+						<div className="biz"><div className="biz-v">{fInt(curTot.leads)}</div><div className="biz-l">переходы на сайт</div></div>
 						<div className="biz"><div className="biz-v">{biz.ad_budget ? fInt(biz.ad_budget) + ' ₽' : '—'}</div><div className="biz-l">бюджет рекламы</div></div>
 						<div className="biz"><div className="biz-v">{biz.ad_clicks ? fInt(biz.ad_clicks) : '—'}</div><div className="biz-l">переходы с рекламы</div></div>
 						<div className="biz"><div className="biz-v">{bizRateFmt(biz, 'ad_clicks')}</div><div className="biz-l">цена перехода</div></div>
