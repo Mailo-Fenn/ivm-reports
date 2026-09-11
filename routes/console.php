@@ -13,3 +13,6 @@ Schedule::command('instagram:collect-stories')->everyFourHours()->withoutOverlap
 
 // динамика подписчиков Telegram для каналов без встроенной статистики — по ежедневным снимкам
 Schedule::command('telegram:snapshot-subscribers')->dailyAt('23:50')->withoutOverlapping();
+
+// контент-план: отправка публикаций, чьё время наступило
+Schedule::command('posts:publish')->everyMinute()->withoutOverlapping(30);

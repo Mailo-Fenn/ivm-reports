@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use App\Services\GoogleOAuth;
 use App\Services\InstagramOAuth;
+use App\Services\Publishing\PublishException;
+use App\Services\Publishing\TelegramPublisher;
 use App\Services\TelegramStats;
 use App\Services\VkApi;
 use App\Services\VkApiException;
@@ -42,7 +44,38 @@ class SettingsController extends Controller
                 'redirect_uri' => InstagramOAuth::redirectUri(),
             ],
             'telegram' => TelegramAuthController::state($request),
+            'telegramBot' => [
+                'has_token' => (bool) Setting::get('telegram_bot_token'),
+                'username' => Setting::get('telegram_bot_username'),
+            ],
         ]);
+    }
+
+    // бот для публикаций в каналы клиентов (контент-план)
+    public function telegramBot(Request $request)
+    {
+        $data = $request->validate(['token' => 'nullable|string|max:255']);
+        $token = trim($data['token'] ?? '');
+
+        if ($token === '') {
+            Setting::set('telegram_bot_token', null);
+            Setting::set('telegram_bot_username', null);
+
+            return back()->with('success', 'Ключ Telegram-бота удалён');
+        }
+
+        try {
+            $username = TelegramPublisher::botUsername($token);
+        } catch (PublishException $e) {
+            return back()->with('error', 'Ключ бота не прошёл проверку: '.$e->getMessage());
+        } catch (\Throwable) {
+            return back()->with('error', 'Не удалось связаться с Telegram — проверьте соединение');
+        }
+
+        Setting::set('telegram_bot_token', $token);
+        Setting::set('telegram_bot_username', $username);
+
+        return back()->with('success', "Бот @{$username} подключён — добавьте его администратором каналов клиентов");
     }
 
     public function telegram(Request $request)

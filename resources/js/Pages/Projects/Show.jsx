@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useForm, router } from '@inertiajs/react';
-import { Plus, CalendarDays, Trash2, Send, Copy, ExternalLink, X } from 'lucide-react';
+import { Plus, CalendarDays, Trash2, Send, Copy, ExternalLink, X, CalendarClock } from 'lucide-react';
 import Layout from '../../Layout';
 import { fInt, fSigned, fPct } from '../../lib/ui';
 
@@ -102,6 +102,9 @@ export default function Show({ project, reports, tariffs = {}, share, employees 
 							Редактировать
 						</button>
 					)}
+					<Link className="btn" href={`/projects/${project.id}/posts`}>
+						<CalendarClock size={16} /> Контент-план
+					</Link>
 					<button className="btn btn-accent" onClick={openShare}>
 						<Send size={16} /> Отправить клиенту
 					</button>

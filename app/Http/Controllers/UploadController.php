@@ -20,4 +20,23 @@ class UploadController extends Controller
             'url' => Storage::url($path),
         ]);
     }
+
+    // файлы для публикаций контент-плана: картинки и видео (лимит задаётся и в php.ini/nginx на сервере)
+    public function media(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:jpg,jpeg,png,webp,gif,mp4,mov,m4v|max:512000', // до 500 МБ
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store('posts', 'public');
+
+        return response()->json([
+            'path' => $path,
+            'url' => Storage::url($path),
+            'type' => str_starts_with((string) $file->getMimeType(), 'video') ? 'video' : 'image',
+            'name' => $file->getClientOriginalName(),
+            'size' => $file->getSize(),
+        ]);
+    }
 }

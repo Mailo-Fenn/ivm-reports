@@ -3,7 +3,7 @@ import { router } from '@inertiajs/react';
 import { Instagram, KeyRound, Link2, Save, Send, Trash2, Youtube } from 'lucide-react';
 import Layout from '../../Layout';
 
-export default function Index({ vk, vkid, google, instagram, telegram }) {
+export default function Index({ vk, vkid, google, instagram, telegram, telegramBot }) {
 	const [token, setToken] = useState('');
 	const [saving, setSaving] = useState(false);
 	const [clientId, setClientId] = useState(vkid.client_id || '');
@@ -15,6 +15,16 @@ export default function Index({ vk, vkid, google, instagram, telegram }) {
 	const [igId, setIgId] = useState(instagram?.app_id || '');
 	const [igSecret, setIgSecret] = useState('');
 	const [savingIg, setSavingIg] = useState(false);
+
+	const [botToken, setBotToken] = useState('');
+	const [savingBot, setSavingBot] = useState(false);
+	const saveBot = () => {
+		setSavingBot(true);
+		router.post('/settings/telegram-bot', { token: botToken }, { preserveScroll: true, onFinish: () => setSavingBot(false), onSuccess: () => setBotToken('') });
+	};
+	const removeBot = () => {
+		if (confirm('Удалить ключ бота? Публикации в Telegram перестанут работать.')) router.post('/settings/telegram-bot', { token: '' }, { preserveScroll: true });
+	};
 
 	const [tgApiId, setTgApiId] = useState(telegram?.api_id || '');
 	const [tgApiHash, setTgApiHash] = useState('');
@@ -302,6 +312,44 @@ export default function Index({ vk, vkid, google, instagram, telegram }) {
 					<button className="btn btn-primary" onClick={saveInstagram} disabled={savingIg || !igId.trim() || (!igSecret.trim() && !instagram?.has_secret)}>
 						<Save size={15} /> Сохранить
 					</button>
+				</div>
+			</div>
+
+			<div className="card" style={{ maxWidth: 640, marginTop: 18 }}>
+				<div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+					<Send size={16} /> Telegram-бот — публикации в каналы
+				</div>
+
+				<p style={{ fontSize: 13, color: 'var(--mut)', margin: '10px 0 4px' }}>
+					Через бота портал выкладывает публикации из контент-плана в каналы клиентов. Один бот на всё
+					агентство: клиент добавляет его администратором своего канала с правом публикации, канал
+					указывается в проекте в поле «Канал Telegram».
+				</p>
+				<ol style={{ fontSize: 13, color: 'var(--mut)', margin: '10px 0 4px', paddingLeft: 18, lineHeight: 1.7 }}>
+					<li>В Telegram откройте <a href="https://t.me/BotFather" target="_blank" rel="noreferrer">@BotFather</a>, команда /newbot, задайте имя — получите ключ вида 123456:ABC-DEF…</li>
+					<li>Вставьте ключ ниже и сохраните.</li>
+					<li>В каждом канале клиента: Администраторы → Добавить → найти бота по имени → включить «Публикация сообщений».</li>
+				</ol>
+				<div style={{ margin: '14px 0 6px', fontSize: 13, fontWeight: 700 }}>
+					{telegramBot?.has_token
+						? <span className="status on">● Бот подключён{telegramBot.username ? ` (@${telegramBot.username})` : ''}</span>
+						: <span className="status off">● Бот не подключён</span>}
+				</div>
+				<div className="form-row" style={{ marginTop: 10 }}>
+					<input
+						className="inp"
+						type="password"
+						style={{ flex: 1, minWidth: 260 }}
+						placeholder={telegramBot?.has_token ? 'Вставьте новый ключ, чтобы заменить' : 'Ключ бота от BotFather'}
+						value={botToken}
+						onChange={(e) => setBotToken(e.target.value)}
+					/>
+					<button className="btn btn-primary" onClick={saveBot} disabled={savingBot || !botToken.trim()}>
+						<Save size={15} /> {savingBot ? 'Проверка…' : 'Сохранить'}
+					</button>
+					{telegramBot?.has_token && (
+						<button className="btn btn-danger" onClick={removeBot}><Trash2 size={15} /></button>
+					)}
 				</div>
 			</div>
 

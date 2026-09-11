@@ -16,6 +16,11 @@ class Project extends Model
         'instagram_token_expires_at' => 'datetime',
     ];
 
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class);
+    }
+
     public function reports(): HasMany
     {
         return $this->hasMany(Report::class)

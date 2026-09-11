@@ -5,6 +5,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\GoogleOAuthController;
 use App\Http\Controllers\InstagramOAuthController;
 use App\Http\Controllers\InstagramSyncController;
+use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportPptxController;
@@ -44,6 +45,14 @@ Route::post('/employees', [EmployeeController::class, 'store'])->name('employees
 Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
 Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
 
+// контент-план и автопостинг
+Route::get('/projects/{project}/posts', [PostController::class, 'index'])->name('posts.index');
+Route::post('/projects/{project}/posts', [PostController::class, 'store'])->name('posts.store');
+Route::put('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
+Route::post('/posts/{post}/publish', [PostController::class, 'publish'])->name('posts.publish');
+Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
+Route::post('/upload-media', [UploadController::class, 'media'])->name('upload.media');
+
 Route::post('/projects/{project}/reports', [ReportController::class, 'store'])->name('reports.store');
 Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show');
 Route::put('/reports/{report}', [ReportController::class, 'update'])->name('reports.update');
@@ -60,6 +69,7 @@ Route::post('/settings/vkid', [SettingsController::class, 'vkid'])->name('settin
 Route::post('/settings/google', [SettingsController::class, 'google'])->name('settings.google');
 Route::post('/settings/instagram', [SettingsController::class, 'instagram'])->name('settings.instagram');
 Route::post('/settings/telegram', [SettingsController::class, 'telegram'])->name('settings.telegram');
+Route::post('/settings/telegram-bot', [SettingsController::class, 'telegramBot'])->name('settings.telegram-bot');
 Route::post('/telegram/login/start', [TelegramAuthController::class, 'start'])->middleware('throttle:10,1')->name('telegram.login.start');
 Route::post('/telegram/login/code', [TelegramAuthController::class, 'code'])->middleware('throttle:10,1')->name('telegram.login.code');
 Route::post('/telegram/login/password', [TelegramAuthController::class, 'password'])->middleware('throttle:10,1')->name('telegram.login.password');
