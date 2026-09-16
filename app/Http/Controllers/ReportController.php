@@ -139,6 +139,8 @@ class ReportController extends Controller
             ],
             'reports' => $reports,
             'platformNames' => $this->names,
+            // актуальный набор задач и чек-листа по тарифу проекта — для кнопки «Заполнить по тарифу»
+            'tariffTasks' => $this->tariffTasks($report->project),
             'current' => $platMap($report),
             'previous' => ['label' => $prev?->period_label, 'stats' => $prev ? $platMap($prev) : null],
             'series' => $series,
@@ -346,6 +348,21 @@ class ReportController extends Controller
         }
 
         return $out ?: null;
+    }
+
+    // задачи «план / факт» и чек-лист по тарифу проекта (config/tariffs.php)
+    private function tariffTasks(Project $project): array
+    {
+        $tariff = config('tariffs.list.'.$project->tariff) ?: config('tariffs.list.'.config('tariffs.default'));
+        $out = [];
+        foreach ($tariff['plan_fact'] ?? [] as [$title, $plan]) {
+            $out[] = ['title' => $title, 'plan' => $plan, 'fact' => '', 'status' => 'в работе', 'type' => 'plan_fact'];
+        }
+        foreach ($tariff['checklist'] ?? [] as $title) {
+            $out[] = ['title' => $title, 'plan' => '', 'fact' => '', 'status' => 'в работе', 'type' => 'check'];
+        }
+
+        return $out;
     }
 
     public function destroy(Report $report)

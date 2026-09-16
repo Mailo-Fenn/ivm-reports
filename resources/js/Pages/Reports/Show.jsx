@@ -212,7 +212,7 @@ function Panel({ eyebrow, title, note, children, light }) {
 	);
 }
 
-export default function Show({ project, report, reports, platformNames, current, previous, series, tasks, content, weeks, share }) {
+export default function Show({ project, report, reports, platformNames, current, previous, series, tasks, content, weeks, share, tariffTasks = [] }) {
 	// страница открыта по ссылке для клиента: только просмотр, ссылки ведут на /share/…
 	const ro = !!share;
 	const reportHref = (id) => (ro ? `/share/${share.token}/reports/${id}` : `/reports/${id}`);
@@ -464,7 +464,7 @@ export default function Show({ project, report, reports, platformNames, current,
 				? <Overview {...{ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks: tk, biz, summary, plan, community, setView, PLIST, ro }} />
 				: <PlatformView pid={view} {...{ platformNames, stats, previous, liveSeries, content: ct, PLIST, periodLabel: report.period_label }} />}
 
-			{editing && !ro && <Editor {...{ platformNames, PLIST, togglePlatform, current, previous, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, mn, setMn, num }} />}
+			{editing && !ro && <Editor {...{ platformNames, PLIST, togglePlatform, current, previous, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, mn, setMn, num, tariffTasks }} />}
 
 			<footer className="foot"><span>Истина в маркетинге · istinavm.ru</span><span>{project.name} · {report.period_label}</span></footer>
 		</Layout>
@@ -708,7 +708,7 @@ function PlatformView({ pid, platformNames, stats, previous, liveSeries, content
 	);
 }
 
-function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, mn, setMn, num }) {
+function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, setPf, tk, setTk, ct, setCt, biz, setBiz, summary, setSummary, plan, setPlan, community, setCommunity, wk, setWk, mn, setMn, num, tariffTasks = [] }) {
 	const setStat = (p, k, v) => setPf((s) => ({ ...s, [p]: { ...s[p], [k]: v } }));
 	const statKeys = ['subs', 'views', 'reach', 'inter', 'leads', 'posts', 'stories'];
 	// колонки таблицы топ-контента: площадка, тип, заголовок, 4 метрики, вывод, картинка, удалить;
@@ -822,6 +822,16 @@ function Editor({ platformNames, PLIST, togglePlatform, current, previous, pf, s
 						<div className="edit-section-title">Задачи и чек-лист</div>
 						<div className="edit-section-sub">План/факт показывают клиенту объём работы. Отметьте выполненные пункты чек-листа.</div>
 					</div>
+					{tariffTasks.length > 0 && (
+						<button
+							className="btn btn-mini"
+							style={{ marginLeft: 'auto', flex: 'none' }}
+							title="Заменить задачи и чек-лист актуальным набором из тарифа проекта"
+							onClick={() => { if (confirm('Заменить задачи и чек-лист набором из тарифа проекта? Введённые факты и отметки сбросятся.')) setTk(tariffTasks.map((t) => ({ ...t }))); }}
+						>
+							Заполнить по тарифу
+						</button>
+					)}
 				</div>
 			<div className='two'>
 				<div>
