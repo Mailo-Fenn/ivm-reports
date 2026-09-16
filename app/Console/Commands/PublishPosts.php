@@ -15,9 +15,13 @@ class PublishPosts extends Command
 
     public function handle(PostPublisher $publisher): int
     {
-        $due = Post::where('status', 'scheduled')
-            ->whereNotNull('scheduled_at')
+        $due = Post::whereNotNull('scheduled_at')
             ->where('scheduled_at', '<=', now())
+            ->where(function ($q) {
+                $q->where('status', 'scheduled')
+                    // отправка оборвалась на середине (обрыв процесса, таймаут) — берём заново через 15 минут
+                    ->orWhere(fn ($q2) => $q2->where('status', 'publishing')->where('updated_at', '<=', now()->subMinutes(15)));
+            })
             ->orderBy('scheduled_at')
             ->get();
 
