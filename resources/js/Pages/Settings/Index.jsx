@@ -167,9 +167,10 @@ export default function Index({ vk, vkid, google, instagram, telegram, telegramB
 				</div>
 
 				<p style={{ fontSize: 13, color: 'var(--mut)', margin: '10px 0 4px' }}>
-					Запасной вариант, если VK ID не подключён: сюда можно вставить готовый токен
-					аккаунта-администратора. При подключённом VK ID это поле не используется.
-					Хранится в базе в зашифрованном виде и никогда не показывается целиком.
+					Токен обычного приложения ВК с правом «stats» от аккаунта-администратора сообществ.
+					Пока VK ID не выдал право на статистику, именно этот токен подтягивает просмотры,
+					охваты и подписчиков; посты по-прежнему идут через VK ID. Можно вставить весь адрес
+					страницы после авторизации — токен извлечётся сам. Хранится в зашифрованном виде.
 				</p>
 
 				<div style={{ margin: '14px 0 6px', fontSize: 13, fontWeight: 700 }}>
@@ -183,7 +184,7 @@ export default function Index({ vk, vkid, google, instagram, telegram, telegramB
 						className="inp"
 						type="password"
 						style={{ flex: 1, minWidth: 260 }}
-						placeholder={vk.has_token ? 'Вставьте новый токен, чтобы заменить' : 'Вставьте токен доступа ВК'}
+						placeholder={vk.has_token ? 'Вставьте новый токен или весь адрес страницы, чтобы заменить' : 'Вставьте токен доступа ВК или весь адрес страницы с ним'}
 						value={token}
 						onChange={(e) => setToken(e.target.value)}
 					/>

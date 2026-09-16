@@ -160,8 +160,14 @@ class SettingsController extends Controller
 
     public function update(Request $request)
     {
-        $data = $request->validate(['vk_token' => 'nullable|string|max:1024']);
+        $data = $request->validate(['vk_token' => 'nullable|string|max:4096']);
         $token = trim($data['vk_token'] ?? '');
+        // можно вставить весь адрес страницы после авторизации — токен вытащим сами
+        if (preg_match('~access_token=([^&\s#]+)~', $token, $m)) {
+            $token = $m[1];
+        }
+        $token = trim($token, " 	
+\"'");
 
         if ($token === '') {
             Setting::set('vk_token', null);
