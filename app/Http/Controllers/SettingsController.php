@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use App\Services\GoogleOAuth;
+use App\Models\MaxChat;
 use App\Services\InstagramOAuth;
+use App\Services\Max\MaxApi;
+use App\Services\Max\MaxChats;
+use App\Services\Max\MaxException;
 use App\Services\Publishing\PublishException;
 use App\Services\Publishing\TelegramPublisher;
 use App\Services\TelegramStats;
@@ -48,7 +52,55 @@ class SettingsController extends Controller
                 'has_token' => (bool) Setting::get('telegram_bot_token'),
                 'username' => Setting::get('telegram_bot_username'),
             ],
+            'maxBot' => [
+                'has_token' => (bool) Setting::get('max_bot_token'),
+                'name' => Setting::get('max_bot_name'),
+                'chats' => MaxChat::where('active', true)->orderBy('title')->get(['chat_id', 'title', 'link', 'is_channel', 'participants_count'])->all(),
+            ],
         ]);
+    }
+
+    // бот MAX: статистика каналов и публикации
+    public function maxBot(Request $request)
+    {
+        $data = $request->validate(['token' => 'nullable|string|max:255']);
+        $token = trim($data['token'] ?? '');
+
+        if ($token === '') {
+            Setting::set('max_bot_token', null);
+            Setting::set('max_bot_name', null);
+
+            return back()->with('success', 'Ключ MAX-бота удалён');
+        }
+
+        try {
+            $me = (new MaxApi($token))->me();
+        } catch (MaxException $e) {
+            return back()->with('error', 'Ключ бота не прошёл проверку: '.$e->getMessage());
+        } catch (\Throwable) {
+            return back()->with('error', 'Не удалось связаться с MAX — проверьте соединение');
+        }
+
+        Setting::set('max_bot_token', $token);
+        Setting::set('max_bot_name', $me['username'] ?? $me['name'] ?? 'бот');
+
+        return back()->with('success', 'MAX-бот подключён — добавьте его администратором каналов и нажмите «Найти каналы»');
+    }
+
+    // обновить список каналов, куда добавлен бот
+    public function maxChats()
+    {
+        try {
+            $chats = MaxChats::sync();
+        } catch (MaxException $e) {
+            return back()->with('error', 'MAX: '.$e->getMessage());
+        } catch (\Throwable) {
+            return back()->with('error', 'Не удалось связаться с MAX — проверьте соединение');
+        }
+
+        return back()->with('success', $chats
+            ? 'Найдено каналов: '.count($chats).' — теперь выберите канал в настройках проекта'
+            : 'Каналы не найдены. Убедитесь, что бот добавлен администратором канала, и повторите через минуту');
     }
 
     // бот для публикаций в каналы клиентов (контент-план)
@@ -167,7 +219,8 @@ class SettingsController extends Controller
             $token = $m[1];
         }
         $token = trim($token, " 	
-\"'");
+
+\"'");
 
         if ($token === '') {
             Setting::set('vk_token', null);

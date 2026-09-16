@@ -39,10 +39,7 @@ class TelegramSnapshotSubscribers extends Command
                 continue;
             }
 
-            TelegramSubscriberSnapshot::updateOrCreate(
-                ['project_id' => $project->id, 'taken_on' => now()->toDateString()],
-                ['subscribers' => $count]
-            );
+            TelegramSubscriberSnapshot::record($project->id, now()->toDateString(), $count);
             $this->info("{$project->name} ({$project->telegram_channel}): {$count}");
         }
 

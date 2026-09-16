@@ -16,3 +16,7 @@ Schedule::command('telegram:snapshot-subscribers')->dailyAt('23:50')->withoutOve
 
 // контент-план: отправка публикаций, чьё время наступило
 Schedule::command('posts:publish')->everyMinute()->withoutOverlapping(30);
+
+// MAX: список каналов бота — из событий, подписчики — ежедневными снимками
+Schedule::command('max:sync-chats')->everyTenMinutes()->withoutOverlapping();
+Schedule::command('max:snapshot-subscribers')->dailyAt('23:52')->withoutOverlapping();

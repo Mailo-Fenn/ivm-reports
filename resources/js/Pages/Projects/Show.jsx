@@ -7,7 +7,7 @@ import { fInt, fSigned, fPct } from '../../lib/ui';
 const MONTHS = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
 	'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
-export default function Show({ project, reports, tariffs = {}, share, employees = [] }) {
+export default function Show({ project, reports, tariffs = {}, share, employees = [], maxChats = [] }) {
 	// страница открыта по ссылке для клиента: без правки, интеграций и кнопок
 	const ro = !!share;
 	const reportHref = (id) => (ro ? `/share/${share.token}/reports/${id}` : `/reports/${id}`);
@@ -37,6 +37,7 @@ export default function Show({ project, reports, tariffs = {}, share, employees 
 		vk_token_remove: false,
 		youtube_channel: project.youtube_channel ?? '',
 		telegram_channel: project.telegram_channel ?? '',
+		max_channel_id: project.max_channel_id ?? '',
 		is_active: project.is_active,
 	});
 
@@ -263,6 +264,28 @@ export default function Show({ project, reports, tariffs = {}, share, employees 
 							/>
 						) : (
 							<span>{project.telegram_channel || '—'}</span>
+						)}
+					</div>
+
+					<div className="info-item">
+						<span className="card-title">Канал MAX</span>
+
+						{editing ? (
+							<>
+								<select
+									className="inp"
+									value={edit.data.max_channel_id || ''}
+									onChange={(e) => edit.setData('max_channel_id', e.target.value ? Number(e.target.value) : '')}
+								>
+									<option value="">— не подключён —</option>
+									{maxChats.map((c) => <option key={c.chat_id} value={c.chat_id}>{c.title || c.chat_id}{c.participants_count ? ` · ${c.participants_count}` : ''}</option>)}
+								</select>
+								<span style={{ fontSize: 12, color: 'var(--mut)' }}>
+									{maxChats.length ? 'список каналов, куда добавлен бот агентства' : 'каналов пока нет — добавьте бота администратором канала и нажмите «Найти каналы» в Настройках'}
+								</span>
+							</>
+						) : (
+							<span>{project.max_channel_title || (project.max_channel_id ? `#${project.max_channel_id}` : '—')}</span>
 						)}
 					</div>
 

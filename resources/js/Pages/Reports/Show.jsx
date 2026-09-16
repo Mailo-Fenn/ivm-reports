@@ -365,6 +365,12 @@ export default function Show({ project, report, reports, platformNames, current,
 			onFinish: () => setPullingIg(false),
 		});
 	};
+	const [pullingMax, setPullingMax] = useState(false);
+	const pullMax = () => {
+		if (!confirm('Подтянуть данные из MAX? Понедельные цифры Макса (просмотры, репосты, посты, а при наличии снимков — подписчики) будут перезаписаны данными из канала.')) return;
+		setPullingMax(true);
+		router.post(`/reports/${report.id}/max-sync`, {}, { preserveScroll: true, onFinish: () => setPullingMax(false) });
+	};
 	const [pullingTg, setPullingTg] = useState(false);
 	const pullTg = () => {
 		if (!confirm('Подтянуть данные из Telegram? Понедельные цифры Telegram (просмотры, взаимодействия, посты, а при наличии данных — подписчики) будут перезаписаны данными из канала.')) return;
@@ -410,6 +416,9 @@ export default function Show({ project, report, reports, platformNames, current,
 							)}
 							{project.telegram_channel && (
 								<button className="btn" onClick={pullTg} disabled={pullingTg}><RefreshCw size={16} className={pullingTg ? 'spin' : undefined} /> {pullingTg ? 'Загрузка…' : 'Подтянуть из Telegram'}</button>
+							)}
+							{project.max_channel_id && (
+								<button className="btn" onClick={pullMax} disabled={pullingMax}><RefreshCw size={16} className={pullingMax ? 'spin' : undefined} /> {pullingMax ? 'Загрузка…' : 'Подтянуть из MAX'}</button>
 							)}
 							<a className="btn btn-accent" href={`/reports/${report.id}/pptx`}><FileDown size={16} /> Скачать PowerPoint</a>
 							<button className="btn btn-danger" onClick={removeReport}><Trash2 size={16} /></button>

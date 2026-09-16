@@ -129,7 +129,7 @@ class ReportController extends Controller
         });
 
         return [
-            'project' => ['id' => $report->project->id, 'name' => $report->project->name, 'color' => $report->project->color, 'vk_group' => $report->project->vk_group, 'youtube_channel' => $report->project->youtube_channel, 'instagram_connected' => (bool) $report->project->instagram_token, 'telegram_channel' => $report->project->telegram_channel],
+            'project' => ['id' => $report->project->id, 'name' => $report->project->name, 'color' => $report->project->color, 'vk_group' => $report->project->vk_group, 'youtube_channel' => $report->project->youtube_channel, 'instagram_connected' => (bool) $report->project->instagram_token, 'telegram_channel' => $report->project->telegram_channel, 'max_channel_id' => $report->project->max_channel_id],
             'report' => [
                 'id' => $report->id, 'year' => $report->year, 'month' => $report->month,
                 'period_label' => $report->period_label,

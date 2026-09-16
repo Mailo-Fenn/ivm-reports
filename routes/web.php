@@ -5,6 +5,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\GoogleOAuthController;
 use App\Http\Controllers\InstagramOAuthController;
 use App\Http\Controllers\InstagramSyncController;
+use App\Http\Controllers\MaxSyncController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
@@ -62,6 +63,7 @@ Route::post('/reports/{report}/vk-sync', [VkSyncController::class, 'sync'])->nam
 Route::post('/reports/{report}/youtube-sync', [YouTubeSyncController::class, 'sync'])->name('reports.youtube-sync');
 Route::post('/reports/{report}/instagram-sync', [InstagramSyncController::class, 'sync'])->name('reports.instagram-sync');
 Route::post('/reports/{report}/telegram-sync', [TelegramSyncController::class, 'sync'])->name('reports.telegram-sync');
+Route::post('/reports/{report}/max-sync', [MaxSyncController::class, 'sync'])->name('reports.max-sync');
 
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
@@ -70,6 +72,8 @@ Route::post('/settings/google', [SettingsController::class, 'google'])->name('se
 Route::post('/settings/instagram', [SettingsController::class, 'instagram'])->name('settings.instagram');
 Route::post('/settings/telegram', [SettingsController::class, 'telegram'])->name('settings.telegram');
 Route::post('/settings/telegram-bot', [SettingsController::class, 'telegramBot'])->name('settings.telegram-bot');
+Route::post('/settings/max-bot', [SettingsController::class, 'maxBot'])->name('settings.max-bot');
+Route::post('/settings/max-chats', [SettingsController::class, 'maxChats'])->name('settings.max-chats');
 Route::post('/telegram/login/start', [TelegramAuthController::class, 'start'])->middleware('throttle:10,1')->name('telegram.login.start');
 Route::post('/telegram/login/code', [TelegramAuthController::class, 'code'])->middleware('throttle:10,1')->name('telegram.login.code');
 Route::post('/telegram/login/password', [TelegramAuthController::class, 'password'])->middleware('throttle:10,1')->name('telegram.login.password');

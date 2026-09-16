@@ -6,12 +6,13 @@ use App\Models\Post;
 use App\Models\PostPublication;
 use App\Models\Setting;
 use App\Models\Project;
+use App\Services\Max\MaxChats;
 
 // Отправка публикации во все выбранные площадки. Каждая площадка — отдельная запись
 // post_publications: уже опубликованные не трогаем, упавшие можно повторить.
 class PostPublisher
 {
-    public const PLATFORM_NAMES = ['vk' => 'ВКонтакте', 'tg' => 'Телеграм', 'ig' => 'Инстаграм'];
+    public const PLATFORM_NAMES = ['vk' => 'ВКонтакте', 'tg' => 'Телеграм', 'max' => 'Макс', 'ig' => 'Инстаграм'];
 
     // какие площадки доступны проекту для публикации и почему недоступны остальные
     public static function availability(Project $project): array
@@ -23,6 +24,9 @@ class PostPublisher
             'tg' => Setting::get('telegram_bot_token')
                 ? ($project->telegram_channel ? null : 'укажите канал Telegram в проекте и добавьте бота его администратором')
                 : 'задайте ключ Telegram-бота на странице «Настройки»',
+            'max' => MaxChats::configured()
+                ? ($project->max_channel_id ? null : 'выберите канал MAX в проекте — бот должен быть его администратором')
+                : 'задайте ключ MAX-бота на странице «Настройки»',
             'ig' => 'публикация в Instagram появится следующим этапом',
         ];
     }
@@ -32,6 +36,7 @@ class PostPublisher
         return match ($platform) {
             'vk' => new VkPublisher(),
             'tg' => new TelegramPublisher(),
+            'max' => new MaxPublisher(),
             default => throw new PublishException('Публикация в эту площадку пока не поддерживается'),
         };
     }

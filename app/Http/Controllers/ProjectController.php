@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\MaxChat;
 use App\Models\Project;
 use App\Services\InstagramOAuth;
 use App\Services\VkApi;
@@ -101,6 +102,8 @@ class ProjectController extends Controller
                 'has_vk_token' => (bool) $project->vk_token,
                 'youtube_channel' => $project->youtube_channel,
                 'telegram_channel' => $project->telegram_channel,
+                'max_channel_id' => $project->max_channel_id,
+                'max_channel_title' => $project->max_channel_title,
                 'instagram_username' => $project->instagram_username,
                 'instagram_connected' => (bool) $project->instagram_token,
                 'instagram_expires_at' => $project->instagram_token_expires_at?->format('d.m.Y'),
@@ -112,6 +115,8 @@ class ProjectController extends Controller
             'tariffs' => collect(config('tariffs.list'))->map(fn ($t) => $t['name']),
             // подсказки для поля «Ответственный»: совпадение имени связывает проект с карточкой сотрудника
             'employees' => Employee::orderBy('name')->pluck('name')->all(),
+            // каналы MAX, куда добавлен бот агентства — для выбора в проекте
+            'maxChats' => MaxChat::where('active', true)->orderBy('title')->get(['chat_id', 'title', 'participants_count'])->all(),
         ];
     }
 
@@ -142,6 +147,7 @@ class ProjectController extends Controller
             'vk_token_remove' => 'boolean',
             'youtube_channel' => 'nullable|string|max:255',
             'telegram_channel' => 'nullable|string|max:255',
+            'max_channel_id' => 'nullable|integer',
             'tariff'        => 'nullable|in:'.implode(',', array_keys(config('tariffs.list'))),
             'is_active'     => 'boolean',
         ]);
@@ -155,6 +161,8 @@ class ProjectController extends Controller
             'vk_group'      => $data['vk_group'] ?? null,
             'youtube_channel' => trim($data['youtube_channel'] ?? '') ?: null,
             'telegram_channel' => trim($data['telegram_channel'] ?? '') ?: null,
+            'max_channel_id' => $data['max_channel_id'] ?? null,
+            'max_channel_title' => ($data['max_channel_id'] ?? null) ? MaxChat::where('chat_id', $data['max_channel_id'])->value('title') : null,
             'is_active'     => $data['is_active'] ?? false,
         ]);
 

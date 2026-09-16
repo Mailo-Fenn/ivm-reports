@@ -3,7 +3,7 @@ import { router } from '@inertiajs/react';
 import { Instagram, KeyRound, Link2, Save, Send, Trash2, Youtube } from 'lucide-react';
 import Layout from '../../Layout';
 
-export default function Index({ vk, vkid, google, instagram, telegram, telegramBot }) {
+export default function Index({ vk, vkid, google, instagram, telegram, telegramBot, maxBot }) {
 	const [token, setToken] = useState('');
 	const [saving, setSaving] = useState(false);
 	const [clientId, setClientId] = useState(vkid.client_id || '');
@@ -15,6 +15,21 @@ export default function Index({ vk, vkid, google, instagram, telegram, telegramB
 	const [igId, setIgId] = useState(instagram?.app_id || '');
 	const [igSecret, setIgSecret] = useState('');
 	const [savingIg, setSavingIg] = useState(false);
+
+	const [maxToken, setMaxToken] = useState('');
+	const [savingMax, setSavingMax] = useState(false);
+	const [findingMax, setFindingMax] = useState(false);
+	const saveMax = () => {
+		setSavingMax(true);
+		router.post('/settings/max-bot', { token: maxToken }, { preserveScroll: true, onFinish: () => setSavingMax(false), onSuccess: () => setMaxToken('') });
+	};
+	const removeMax = () => {
+		if (confirm('Удалить ключ MAX-бота? Статистика и публикации в MAX перестанут работать.')) router.post('/settings/max-bot', { token: '' }, { preserveScroll: true });
+	};
+	const findMaxChats = () => {
+		setFindingMax(true);
+		router.post('/settings/max-chats', {}, { preserveScroll: true, onFinish: () => setFindingMax(false) });
+	};
 
 	const [botToken, setBotToken] = useState('');
 	const [savingBot, setSavingBot] = useState(false);
@@ -314,6 +329,60 @@ export default function Index({ vk, vkid, google, instagram, telegram, telegramB
 						<Save size={15} /> Сохранить
 					</button>
 				</div>
+			</div>
+
+			<div className="card" style={{ maxWidth: 640, marginTop: 18 }}>
+				<div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+					<Send size={16} /> MAX-бот — статистика и публикации в каналы
+				</div>
+
+				<p style={{ fontSize: 13, color: 'var(--mut)', margin: '10px 0 4px' }}>
+					Один бот на всё агентство. Клиент добавляет его администратором своего канала MAX,
+					после этого портал видит посты с просмотрами и число подписчиков и может публиковать
+					в канал. Историю подписчиков MAX не отдаёт: динамика копится ежедневными снимками с момента подключения.
+				</p>
+				<ol style={{ fontSize: 13, color: 'var(--mut)', margin: '10px 0 4px', paddingLeft: 18, lineHeight: 1.7 }}>
+					<li>В MAX откройте <b>@MasterBot</b>, создайте бота и скопируйте ключ (токен).</li>
+					<li>Вставьте ключ ниже и сохраните.</li>
+					<li>В каждом канале клиента: Участники → Добавить → найти бота → назначить администратором.</li>
+					<li>Нажмите «Найти каналы» — бот увидит каналы по событиям добавления. Затем выберите канал в настройках проекта.</li>
+				</ol>
+				<div style={{ margin: '14px 0 6px', fontSize: 13, fontWeight: 700 }}>
+					{maxBot?.has_token
+						? <span className="status on">● Бот подключён{maxBot.name ? ` (${maxBot.name})` : ''}</span>
+						: <span className="status off">● Бот не подключён</span>}
+				</div>
+				<div className="form-row" style={{ marginTop: 10 }}>
+					<input
+						className="inp"
+						type="password"
+						style={{ flex: 1, minWidth: 260 }}
+						placeholder={maxBot?.has_token ? 'Вставьте новый ключ, чтобы заменить' : 'Ключ бота от @MasterBot'}
+						value={maxToken}
+						onChange={(e) => setMaxToken(e.target.value)}
+					/>
+					<button className="btn btn-primary" onClick={saveMax} disabled={savingMax || !maxToken.trim()}>
+						<Save size={15} /> {savingMax ? 'Проверка…' : 'Сохранить'}
+					</button>
+					{maxBot?.has_token && (
+						<button className="btn btn-danger" onClick={removeMax}><Trash2 size={15} /></button>
+					)}
+				</div>
+				{maxBot?.has_token && (
+					<div style={{ marginTop: 14 }}>
+						<div className="form-row">
+							<button className="btn" onClick={findMaxChats} disabled={findingMax}>{findingMax ? 'Ищем…' : 'Найти каналы'}</button>
+							<span style={{ fontSize: 12, color: 'var(--mut)' }}>список обновляется и сам каждые 10 минут</span>
+						</div>
+						{maxBot.chats?.length > 0 && (
+							<div className="emp-projects" style={{ marginTop: 10 }}>
+								{maxBot.chats.map((c) => (
+									<span key={c.chat_id} className="chip" title={`id ${c.chat_id}`}>{c.title || c.chat_id}{c.participants_count ? ` · ${c.participants_count}` : ''}{c.is_channel ? '' : ' · чат'}</span>
+								))}
+							</div>
+						)}
+					</div>
+				)}
 			</div>
 
 			<div className="card" style={{ maxWidth: 640, marginTop: 18 }}>
