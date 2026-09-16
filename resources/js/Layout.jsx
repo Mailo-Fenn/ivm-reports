@@ -21,6 +21,7 @@ export default function Layout({ crumbs = [], children }) {
     <div className="shell">
       <header className="topbar">
         <div className="topbar-in">
+          <div className="topbar-left">
           <Link href={share ? `/share/${share.token}` : '/projects'} className="logo">
             <span className="logo-bar" />
             <span>
@@ -28,13 +29,12 @@ export default function Layout({ crumbs = [], children }) {
               <span className="logo-sub">В МАРКЕТИНГЕ</span>
             </span>
           </Link>
+          {/* хлебные крошки: корень раздела + путь страницы; в режиме клиента — только путь */}
           <nav className="crumbs">
             {!share && (
-              <>
-                <Link href="/projects" className={section === 'projects' && crumbs.length === 0 ? 'cur' : ''}>Проекты</Link>
-                <span className="sep">·</span>
-                <Link href="/employees" className={section === 'employees' ? 'cur' : ''}>Сотрудники</Link>
-              </>
+              section === 'employees'
+                ? <Link href="/employees" className={crumbs.length === 0 ? 'cur' : ''}>Сотрудники</Link>
+                : <Link href="/projects" className={crumbs.length === 0 ? 'cur' : ''}>Проекты</Link>
             )}
             {crumbs.map((c, i) => (
               <React.Fragment key={i}>
@@ -43,11 +43,18 @@ export default function Layout({ crumbs = [], children }) {
               </React.Fragment>
             ))}
           </nav>
-          <div className="topbar-spacer" />
+          </div>
+          {/* меню разделов — по центру шапки */}
+          {!share && (
+            <nav className="topnav">
+              <Link href="/projects" className={section === 'projects' ? 'on' : ''}>Проекты</Link>
+              <Link href="/employees" className={section === 'employees' ? 'on' : ''}>Сотрудники</Link>
+            </nav>
+          )}
           {share ? (
-            <span className="crumbs" style={{ opacity: .8 }}>Отчёт для клиента</span>
+            <span className="crumbs topbar-right" style={{ opacity: .8 }}>Отчёт для клиента</span>
           ) : (
-            <nav className="crumbs">
+            <nav className="crumbs topbar-right">
               <Link href="/settings">Настройки</Link>
               <span className="sep">·</span>
               <Link href="/logout" method="post" as="button" type="button">Выйти</Link>
