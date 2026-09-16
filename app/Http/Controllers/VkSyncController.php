@@ -42,20 +42,26 @@ class VkSyncController extends Controller
             return back()->with('error', 'Не удалось связаться с VK API — проверьте соединение');
         }
 
-        // stats.get доступен не каждому токену: 27 — ключ сообщества, 1051 — токен VK ID
-        // без права stats; в этих случаях подтягиваем только посты, не трогая остальные цифры
-        $statsAvailable = true;
+        // stats.get доступен не каждому токену: 27 — ключ сообщества, 1051 — токен VK ID без права stats.
+        // Пробуем по очереди все имеющиеся токены (VK ID → резервный токен → ключ проекта);
+        // если ни один не подходит, подтягиваем только посты, не трогая остальные цифры
+        $statsAvailable = false;
         $days = [];
-        try {
-            // до сегодня, а не до конца месяца: по приросту после месяца восстанавливаем число подписчиков на его конец
-            $days = $vk->stats($group['id'], $start->timestamp, max($end->timestamp, time()));
-        } catch (VkApiException $e) {
-            if (!in_array($e->getCode(), [27, 1051])) {
-                return back()->with('error', 'Ошибка VK API: ' . $e->getMessage());
+        $candidates = array_values(array_unique(array_filter([$token, Setting::get('vk_token'), $report->project->vk_token])));
+        foreach ($candidates as $candidate) {
+            try {
+                // до сегодня, а не до конца месяца: по приросту после месяца восстанавливаем число подписчиков на его конец
+                $days = (new VkApi($candidate))->stats($group['id'], $start->timestamp, max($end->timestamp, time()));
+                $statsAvailable = true;
+                break;
+            } catch (VkApiException $e) {
+                if (!in_array($e->getCode(), [27, 1051, 15, 7])) {
+                    return back()->with('error', 'Ошибка VK API: ' . $e->getMessage());
+                }
+                // нет права на статистику у этого токена — пробуем следующий
+            } catch (\Throwable) {
+                return back()->with('error', 'Не удалось связаться с VK API — проверьте соединение');
             }
-            $statsAvailable = false;
-        } catch (\Throwable) {
-            return back()->with('error', 'Не удалось связаться с VK API — проверьте соединение');
         }
 
         // недели отчёта: дни 1–7, 8–14, 15–21, 22 — конец месяца
