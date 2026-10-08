@@ -165,6 +165,40 @@ class Report extends Model
             ->groupBy('platform');
     }
 
+    /**
+     * Непрерывный ряд месяцев для графиков: до $limit месяцев подряд, заканчивая текущим отчётом.
+     * Месяцы без отчёта возвращаются с report = null (на графике это 0), чтобы ось не «рвалась».
+     * Раньше первого отчёта проекта не уходим.
+     *
+     * @return \Illuminate\Support\Collection<int, array{year:int, month:int, report:?Report}>
+     */
+    public static function monthWindow(self $report, int $limit = 12, array $with = []): \Illuminate\Support\Collection
+    {
+        $first = static::where('project_id', $report->project_id)
+            ->orderBy('year')->orderBy('month')->first();
+
+        $existing = static::where('project_id', $report->project_id)
+            ->where(fn ($q) => $q->where('year', '<', $report->year)
+                ->orWhere(fn ($q2) => $q2->where('year', $report->year)->where('month', '<=', $report->month)))
+            ->with($with)
+            ->get()
+            ->keyBy(fn ($r) => $r->year * 100 + $r->month);
+
+        $span = $limit;
+        if ($first) {
+            $diff = ($report->year - $first->year) * 12 + ($report->month - $first->month) + 1;
+            $span = max(1, min($limit, $diff));
+        }
+
+        return collect(range($span - 1, 0))->map(function ($back) use ($report, $existing) {
+            $m = $report->month - $back;
+            $y = $report->year;
+            while ($m <= 0) { $m += 12; $y--; }
+
+            return ['year' => $y, 'month' => $m, 'report' => $existing[$y * 100 + $m] ?? null];
+        })->values();
+    }
+
     public function syncPlatformStats(): void
     {
         foreach (self::PLATFORMS as $platform) {

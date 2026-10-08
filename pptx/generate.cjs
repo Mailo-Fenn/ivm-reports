@@ -70,7 +70,7 @@ function sphere(s, x, y, w, n = 1) {
 function title(s, runs, opts) {
   s.addText(
     runs.map(([t, wine]) => ({ text: t, options: { color: wine ? WINE : DARK } })),
-    { x: 0.99, y: 1.53, w: 11.9, h: 1.15, fontFace: FONT, fontSize: 60, margin: 0, ...opts }
+    { x: 1.16, y: 1.53, w: 11.9, h: 1.15, fontFace: FONT, fontSize: 60, margin: 0, ...opts }
   );
 }
 
@@ -153,12 +153,12 @@ if ((D.tasks || []).length) {
   logo(s, 1.16, 0.84);
   s.addText(
     [{ text: "Мы ", options: { color: DARK } }, { text: "сделали", options: { color: WINE } }],
-    { x: 0.99, y: 2.24, w: 7.0, h: 1.11, fontFace: FONT, fontSize: 60, margin: 0 }
+    { x: 1.16, y: 1.55, w: 7.0, h: 1.11, fontFace: FONT, fontSize: 60, margin: 0 }
   );
-  let cx = 1.16, cy = 3.75;
+  let cx = 1.16, cy = 2.65;
   D.tasks.slice(0, 16).forEach((t, i) => {
     const text = t.title || "";
-    const w = Math.min(5.5, text.length * 0.115 + 0.6);
+    const w = Math.min(5.5, text.length * 0.115 + 1);
     if (cx + w > 12.4) { cx = 1.16; cy += 0.61; }
     chip(s, cx, cy, w, text, i % 2 ? CHIP2 : WINE2);
     cx += w + 0.13;
@@ -176,7 +176,7 @@ KEYS.forEach((pk) => {
       { text: "показателей", options: { color: WINE } },
       { text: " " + (PLAT_SHORT[pk] || pk), options: { color: DARK } },
     ],
-    { x: 0.99, y: 0.36, w: 11.2, h: 1.92, fontFace: FONT, fontSize: 54, margin: 0 }
+    { x: 1.16, y: 0.36, w: 11.2, h: 1.92, fontFace: FONT, fontSize: 54, margin: 0 }
   );
   logo(s, 10.62, 0.6);
 
@@ -268,7 +268,7 @@ KEYS.forEach((pk) => {
     const s = slide();
     s.addText(
       [{ text: mName, options: { color: WINE } }, { text: " " + platName, options: { color: DARK } }],
-      { x: 0.99, y: 2.06, w: 11.9, h: 1.11, fontFace: FONT, fontSize: mName.length + platName.length > 20 ? 54 : 60, margin: 0 }
+      { x: 1.16, y: 2.06, w: 11.9, h: 1.11, fontFace: FONT, fontSize: mName.length + platName.length > 20 ? 54 : 60, margin: 0 }
     );
     logo(s, 1.16, 0.5);
 
@@ -319,7 +319,7 @@ function contentSlide(platName, items, isStory) {
   const s = slide();
   s.addText(
     [{ text: isStory ? "Сторис" : "Посты", options: { color: WINE } }, { text: " " + platName, options: { color: DARK } }],
-    { x: 0.99, y: 1.53, w: 11.0, h: 1.11, fontFace: FONT, fontSize: 60, margin: 0 }
+    { x: 1.16, y: 1.53, w: 11.0, h: 1.11, fontFace: FONT, fontSize: 60, margin: 0 }
   );
   logo(s, 1.16, 0.5);
   sphere(s, 5.75, 3.86, 1.96, 1); // под белой карточкой, выглядывает справа

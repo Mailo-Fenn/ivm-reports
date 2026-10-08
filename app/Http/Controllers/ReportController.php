@@ -78,20 +78,17 @@ class ReportController extends Controller
             'totals'       => $report->totals,
         ]);
 
-        // series: last up-to-6 months of this project (ascending) for charts
-        $history = Report::where('project_id', $report->project_id)
-            ->where(fn ($q) => $q->where('year', '<', $report->year)
-                ->orWhere(fn ($q2) => $q2->where('year', $report->year)->where('month', '<=', $report->month)))
-            ->with('weeklyStats')
-            ->orderByDesc('year')->orderByDesc('month')->limit(6)->get()->reverse()->values();
+        // series: непрерывный ряд месяцев (до 12) по текущий отчёт; месяцы без отчёта — нулями
+        $history = Report::monthWindow($report, 12, ['weeklyStats', 'platformStats']);
 
         $shortMonth = ['', 'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 
-        $series = $history->map(function ($r) use ($shortMonth) {
-            $row = ['k' => $shortMonth[$r->month]];
+        $series = $history->map(function ($h) use ($shortMonth) {
+            $row = ['k' => $shortMonth[$h['month']]];
+            $r = $h['report'];
 
             foreach ($this->platforms as $p) {
-                $stats = $r->platform_totals[$p] ?? [];
+                $stats = $r ? ($r->platform_totals[$p] ?? []) : [];
 
                 $row[$p] = [
                     'subs' => $stats['subs'] ?? 0,

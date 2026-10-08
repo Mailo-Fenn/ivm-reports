@@ -33,21 +33,20 @@ class ReportPptxController extends Controller
             return $out;
         };
 
-        // series: last 6 months per platform (подписчики, просмотры, взаимодействия)
+        // series: непрерывный ряд месяцев (до 6) по текущий отчёт; месяцы без отчёта — нулями
         $months = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-        $history = Report::where('project_id', $report->project_id)
-            ->where(fn ($q) => $q->where('year', '<', $report->year)
-                ->orWhere(fn ($q2) => $q2->where('year', $report->year)->where('month', '<=', $report->month)))
-            ->with('platformStats')->orderByDesc('year')->orderByDesc('month')->limit(6)->get()->reverse()->values();
+        $history = Report::monthWindow($report, 6, ['platformStats', 'weeklyStats']);
 
-        $series = $history->map(function ($r) use ($months, $platforms) {
-            $row = ['k' => $months[$r->month]];
+        $series = $history->map(function ($h) use ($months, $platforms) {
+            $row = ['k' => $months[$h['month']]];
+            $r = $h['report'];
             foreach ($platforms as $p) {
-                $ps = $r->platformStats->firstWhere('platform', $p);
+                // берём те же итоги, что показывает сайт (недели, с откатом на месячные)
+                $stats = $r ? ($r->platform_totals[$p] ?? []) : [];
                 $row[$p] = [
-                    'subs' => $ps?->subs ?? 0,
-                    'views' => $ps?->views ?? 0,
-                    'inter' => $ps?->inter ?? 0,
+                    'subs' => $stats['subs'] ?? 0,
+                    'views' => $stats['views'] ?? 0,
+                    'inter' => $stats['inter'] ?? 0,
                 ];
             }
             return $row;

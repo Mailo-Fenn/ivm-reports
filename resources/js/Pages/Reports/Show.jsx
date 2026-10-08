@@ -497,6 +497,10 @@ function Overview({ platformNames, stats, curTot, prevTot, liveSeries, hi, tasks
 	console.log(curTot)
 
 	const chartData = liveSeries.map((r) => ({ k: r.k, views: PLIST.reduce((a, p) => a + (r[p]?.views || 0), 0) }));
+
+	console.log('test')
+	console.log(chartData)
+
 	return (
 		<>
 			<div className="kpi-grid">
