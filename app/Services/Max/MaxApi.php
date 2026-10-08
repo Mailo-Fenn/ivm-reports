@@ -87,6 +87,29 @@ class MaxApi
         return array_values($out);
     }
 
+    // Комментарии к посту канала. Реакций MAX в Bot API не отдаёт, поэтому комментарии —
+    // единственный доступный сигнал вовлечённости помимо репостов.
+    public function commentsCount(string $messageId): int
+    {
+        $total = 0;
+        $marker = null;
+        for ($page = 0; $page < 10; $page++) {
+            $q = ['count' => 100];
+            if ($marker !== null) {
+                $q['marker'] = $marker;
+            }
+            $r = $this->get('/messages/'.rawurlencode($messageId).'/comments', $q);
+            $items = $r['comments'] ?? $r['messages'] ?? [];
+            $total += count($items);
+            $marker = $r['marker'] ?? null;
+            if ($marker === null || count($items) < 100) {
+                break;
+            }
+        }
+
+        return $total;
+    }
+
     // загрузка файла: /uploads → адрес → файл → payload для вложения сообщения
     public function uploadAttachment(string $type, string $absPath, string $name): array
     {

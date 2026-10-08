@@ -20,3 +20,7 @@ Schedule::command('posts:publish')->everyMinute()->withoutOverlapping(30);
 // MAX: список каналов бота — из событий, подписчики — ежедневными снимками
 Schedule::command('max:sync-chats')->everyTenMinutes()->withoutOverlapping();
 Schedule::command('max:snapshot-subscribers')->dailyAt('23:52')->withoutOverlapping();
+
+// MAX: статистика (просмотры, вовлечённость, подписчики) в отчёт текущего месяца —
+// то же, что кнопка «Подтянуть из MAX», но само и по всем проектам
+Schedule::command('max:sync-stats')->dailyAt('23:55')->withoutOverlapping();
